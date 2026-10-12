@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="一个给自己写代码的 agent 在 10 个浏览器游戏上的证据：它能学会每个游戏，但学到的东西只在它见过的像素里有效。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="我们离终身游戏 agent 还有多远？">
+<meta property="og:description" content="一个给自己写代码的 agent 在 10 个浏览器游戏上的证据：它能学会每个游戏，但学到的东西只在它见过的像素里有效。">
+<meta property="og:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="我们离终身游戏 agent 还有多远？">
+<meta name="twitter:description" content="一个给自己写代码的 agent 在 10 个浏览器游戏上的证据：它能学会每个游戏，但学到的东西只在它见过的像素里有效。">
+<meta name="twitter:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
+<title>我们离终身游戏 agent 还有多远？</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~42em) with figures allowed to break out to a wider measure; lab-notebook restraint, ink-blue accent shared with the figures. */
+:root {
+  --bg: #fbfbf8;
+  --fg: #1f2328;
+  --muted: #5e646d;
+  --rule: #e2e3df;
+  --panel: #f2f3ef;
+  --accent: #2f6690;
+  --warm: #b8492f;
+  --figbg: #ffffff;
+  --code-bg: #f1f2ee;
+  --serif: "Noto Serif SC", "Songti SC", "STSong", serif;
+  --sans: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --measure: 42rem;
+  --wide: 62rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --fg: #e4e5e1; --muted: #a0a6ae; --rule: #2d3239; --panel: #1d2126;
+    --accent: #8ab8dc; --warm: #e58a72; --figbg: #f6f6f3; --code-bg: #1f242a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --fg: #e4e5e1; --muted: #a0a6ae; --rule: #2d3239; --panel: #1d2126;
+  --accent: #8ab8dc; --warm: #e58a72; --figbg: #f6f6f3; --code-bg: #1f242a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16.5px; line-height: 1.85; padding-inline: 20px; padding-block: 0 4rem; }
+main { max-width: var(--wide); margin: 0 auto; }
+.col { max-width: var(--measure); margin-inline: auto; }
+header.top { padding-block: 3.5rem 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; }
+.eyebrow { font-size: 0.8rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 2.75rem); line-height: 1.3; margin: 0.6rem 0 0.8rem; text-wrap: balance; }
+.subtitle { font-size: 1.12rem; color: var(--muted); margin: 0 0 0.6rem; text-wrap: balance; }
+.byline { font-size: 0.95rem; margin: 0 0 1.2rem; }
+.byline .email { user-select: all; }
+.meta { font-size: 0.85rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; }
+.meta span { font-variant-numeric: tabular-nums; }
+h2 { font-family: var(--serif); font-weight: 700; font-size: 1.55rem; line-height: 1.4; margin: 3.4rem 0 1rem; text-wrap: balance; }
+h2 .num { color: var(--accent); margin-right: 0.5rem; font-variant-numeric: tabular-nums; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.18rem; line-height: 1.5; margin: 2.4rem 0 0.6rem; text-wrap: balance; }
+h3 .num { color: var(--muted); font-family: var(--sans); font-weight: 500; font-size: 0.9rem; margin-right: 0.5rem; }
+p { margin: 0 0 1.05rem; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+strong { font-weight: 700; }
+.abstract { background: var(--panel); border-radius: 6px; padding: 1.4rem 1.6rem; margin-bottom: 1rem; }
+.abstract h2 { margin: 0 0 0.6rem; font-size: 1.1rem; }
+.abstract p:last-child { margin-bottom: 0; }
+.claims { list-style: none; padding: 0; margin: 1rem 0 1.4rem; display: grid; gap: 0.55rem; counter-reset: c; }
+.claims li { counter-increment: c; display: grid; grid-template-columns: 1.8rem 1fr; gap: 0.4rem; }
+.claims li::before { content: counter(c); font-family: var(--serif); font-weight: 700; color: var(--accent); }
+ul.plain { padding-left: 1.2rem; margin: 0 0 1.05rem; }
+ul.plain li { margin-bottom: 0.35rem; }
+figure { margin: 2rem auto; max-width: var(--wide); }
+figure.narrow { max-width: var(--measure); }
+figure .frame { background: var(--figbg); border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem; }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { font-size: 0.88rem; line-height: 1.7; color: var(--muted); max-width: var(--measure); margin: 0.7rem auto 0; }
+figcaption b { color: var(--fg); font-weight: 600; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.9rem; }
+.game { margin: 0; min-width: 0; }
+.game .shot { background: #111; border-radius: 4px; overflow: hidden; aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; }
+.game .shot img { width: 100%; height: 100%; object-fit: contain; }
+.game .name { font-weight: 700; font-size: 0.92rem; margin-top: 0.4rem; }
+.game .desc { font-size: 0.8rem; line-height: 1.55; color: var(--muted); }
+.tag { display: inline-block; font-size: 0.7rem; letter-spacing: 0.04em; padding: 0 0.45rem; border-radius: 3px; background: var(--panel); color: var(--muted); margin-left: 0.3rem; vertical-align: 1px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.pair img { border-radius: 4px; }
+.pair .lab { font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 0.3rem; }
+.tablewrap { overflow-x: auto; margin: 1.2rem 0 1.6rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; line-height: 1.6; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 700; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.03em; border-bottom: 1.5px solid var(--fg); }
+td.n { text-align: right; white-space: nowrap; }
+.yes { color: var(--accent); font-weight: 700; }
+.no { color: var(--warm); font-weight: 700; }
+pre { background: var(--code-bg); border-radius: 6px; padding: 1rem 1.1rem; overflow-x: auto; font-family: var(--mono); font-size: 0.8rem; line-height: 1.6; margin: 1.2rem 0 0.4rem; }
+code { font-family: var(--mono); font-size: 0.86em; }
+pre .hl { color: var(--warm); font-weight: 500; }
+pre .ok { color: var(--accent); font-weight: 500; }
+pre .cm { color: var(--muted); }
+.code-note { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.4rem; }
+blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px solid var(--rule); color: var(--muted); font-size: 0.95rem; }
+.diagram { overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 620px; height: auto; }
+.diagram .box { fill: var(--panel); stroke: var(--rule); stroke-width: 1.2; }
+.diagram .box.key { fill: var(--bg); stroke: var(--accent); stroke-width: 1.6; }
+.diagram .t { fill: var(--fg); font-family: var(--sans); font-size: 13px; font-weight: 600; }
+.diagram .s { fill: var(--muted); font-family: var(--sans); font-size: 11.5px; }
+.diagram .ln { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.diagram .ln.acc { stroke: var(--accent); }
+.diagram .ln.dash { stroke-dasharray: 5 4; }
+.diagram .ah { fill: var(--muted); }
+.diagram .ah.acc { fill: var(--accent); }
+.matrix-demo td, .matrix-demo th { text-align: center; }
+.matrix-demo td.d { background: color-mix(in srgb, var(--accent) 22%, transparent); font-weight: 700; }
+.matrix-demo td.u { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.matrix-demo td.l { background: color-mix(in srgb, var(--warm) 9%, transparent); }
+.toc { font-size: 0.88rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin-top: 1.4rem; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--accent); }
+.refs { font-size: 0.85rem; line-height: 1.7; color: var(--muted); padding-left: 1.2rem; }
+.refs li { margin-bottom: 0.4rem; }
+.foot { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2rem; }
+.lang a { color: var(--muted); }
+.takeaway { font-family: var(--serif); font-size: 1.2rem; line-height: 1.7; font-weight: 600; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 1.2rem 0; margin: 2rem 0; text-wrap: balance; }
+@media (max-width: 560px) {
+  body { font-size: 15.5px; padding-inline: 16px; }
+  .pair { grid-template-columns: 1fr; }
+  .abstract { padding: 1.1rem 1.1rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+</head>
+<body>
+<main>
+<header class="top col">
+  <div class="eyebrow">NthGame 技术报告 · 2026 年 10 月<span class="lang"> · <a href="index.html" data-lang="en">English</a></span></div>
+  <h1>我们离终身游戏 agent 还有多远？</h1>
+  <p class="subtitle">一个给自己写代码的 agent 在 10 个浏览器游戏上的证据</p>
+  <p class="byline">Hao Chen · <span class="email">haochen2115@gmail.com</span> · <a href="https://github.com/haochen2115" target="_blank" rel="noopener">github.com/haochen2115</a></p>
+  <div class="meta">
+    <span>模型：DeepSeek V4.1 Flash（只看屏幕截图）</span>
+    <span>环境：GameWorld 浏览器游戏</span>
+    <span>4 743 局 · 116 万环境步</span>
+    <span>API 花费 $313 · 不使用 GPU</span>
+  </div>
+  <nav class="toc" aria-label="目录">
+    <a href="#abstract">摘要</a><a href="#intro">1 引言</a><a href="#setup">2 环境与度量</a><a href="#agent">3 Agent</a><a href="#results">4 结果</a><a href="#discussion">5 讨论</a><a href="#limits">6 局限</a><a href="#appendix">附录</a>
+  </nav>
+</header>
+
+<section class="col" id="abstract">
+  <div class="abstract">
+    <h2>摘要</h2>
+    <p>一个终身游戏 agent 应当能凭反馈把任何新游戏玩好，并且玩过的游戏越多，学下一个游戏就越快。我们用一个不更新权重的 agent 检验这个目标离现实有多远：它在一个持久工作区里给自己写技能程序、记笔记、记成绩，所有游戏使用完全相同的提示词，没有任何逐游戏的人工设计。</p>
+    <p>在 10 个浏览器游戏、约 4 700 局实验中，我们发现：agent 能在单个游戏内学会，但前提是把经验写成可执行的代码；不给它任何记忆结构，它会自己发明出单游戏学习所需的结构。然而它学到的东西几乎带不走：跨游戏收益是一个不随经历增长的常数，同类游戏的经验也没有额外好处。逐级加大环境变化后可以看到，经验只在画面不变时有用，仅把画面颜色反转，经验就从有利变为有害。按持续学习的方式连续学一条游戏链时，它既没有越学越快，还会因为共享代码被改写而忘掉学过的游戏。</p>
+    <p>结论是：单游戏内的自我改进和自组织记忆已经可以实现，但 agent 存下的经验绑定在像素上，缺少一层与画面无关的表示，这是通往终身游戏 agent 的主要缺口。</p>
+  </div>
+</section>
+
+<section class="col" id="intro">
+  <h2><span class="num">1</span>引言</h2>
+  <p>人类玩家有一种能力很少被认真测量：玩过足够多的游戏后，拿到一个新游戏，几局之内就能上手，并且这种上手速度会随经历越来越快。我们把具备这种能力的系统称为<strong>终身游戏 agent</strong>。它至少要做到三件事：</p>
+  <ul class="plain">
+    <li><strong>在一个游戏里越玩越好</strong>：只依靠游戏给的反馈，而不是人为它写好的规则。</li>
+    <li><strong>自己组织记忆</strong>：决定记什么、怎么记，而不是由人为每个游戏设计数据结构。</li>
+    <li><strong>把经验带到下一个游戏</strong>：学第 N 个游戏的代价随 N 下降，同时不忘记已经学会的游戏。</li>
+  </ul>
+  <p>大模型的出现让这件事第一次可以在不训练权重的前提下尝试。一个视觉语言模型能看懂屏幕、会写代码、能反思失败；如果再给它一块可以长期读写的工作区，它在原则上就可以把每一局的教训沉淀下来，并在下一个游戏里复用。这类思路在 Minecraft 等单一世界里已有先例（Voyager、Cradle 等），但它们大多依赖结构化的游戏接口，并且没有在<em>不同的游戏之间</em>、用从零开始的对照组测量过迁移。</p>
+  <p>本报告用一个刻意保持简单、通用的 agent 来回答一个问题：<strong>按上面三条标准，我们今天离终身游戏 agent 还有多远？</strong>我们的贡献是：</p>
+  <ol class="claims">
+    <li>一套零逐游戏工程的评测方案，包括单游戏学习、跨游戏序列、相似度阶梯和借自持续学习的"链式性能矩阵"，均以从零开始的 agent 作配对对照。</li>
+    <li>六条实证发现，分别对应上面三条标准，并给出每条结论背后的机制证据（agent 写下的代码和笔记）。</li>
+    <li>对缺口的定位：经验的有效范围止于"画面不变"，原因是 agent 的经验以像素为坐标。</li>
+  </ol>
+</section>
+
+<section id="setup">
+  <div class="col">
+    <h2><span class="num">2</span>环境与度量</h2>
+    <p>我们使用 <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">GameWorld</a> 浏览器游戏集。agent 每一步只能看到一张屏幕截图，从游戏注册的几个按键动作中选择一个；推理期间游戏暂停，所以模型思考的快慢不会影响游戏。每局 400 步，每个动作持续 0.1 到 0.2 秒。我们从中选出 10 个可以稳定打分、玩法各异的游戏，按玩法分成四类：</p>
+  </div>
+  <figure>
+    <div class="gallery">
+      <div class="game"><div class="shot"><img src="figs/games/07_chrome-dino.png" alt="Chrome Dino 截图：恐龙在地面线上奔跑"></div><div class="name">Chrome Dino<span class="tag">一键时机</span></div><div class="desc">恐龙自动奔跑，按键跳过仙人掌。目标：一局 200 分。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/14_geodash.png" alt="Geodash 截图：方块前方有尖刺"></div><div class="name">Geodash<span class="tag">一键时机</span></div><div class="desc">方块自动前进，按键跳过尖刺。目标：一局 100 分。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/27_stack.png" alt="Stack 截图：滑动的方块和塔"></div><div class="name">Stack<span class="tag">一键时机</span></div><div class="desc">方块来回滑动，按键落到塔顶，错位部分被切掉。目标：叠 10 块。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/05_breakout.png" alt="Breakout 截图：砖墙和挡板"></div><div class="name">Breakout<span class="tag">左右操控</span></div><div class="desc">左右移动挡板接球打砖。目标：清空本关砖块。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/10_doodle-jump.png" alt="Doodle Jump 截图：小人和绿色平台"></div><div class="name">Doodle Jump<span class="tag">左右操控</span></div><div class="desc">小人自动弹跳，左右控制踩平台向上。目标：高度 3000。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/11_edge-surf.png" alt="Edge Surf 截图：冲浪者和海面障碍"></div><div class="name">Edge Surf<span class="tag">左右操控</span></div><div class="desc">冲浪者下滑，左右转向躲开障碍。目标：1200 分且不死。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/23_pacman.png" alt="Pac-Man 截图：迷宫与幽灵"></div><div class="name">Pac-Man<span class="tag">网格导航</span></div><div class="desc">迷宫里吃豆、躲幽灵，四方向移动。目标：2000 分。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/15_google-snake.png" alt="Snake 截图：蛇与苹果"></div><div class="name">Snake<span class="tag">网格导航</span></div><div class="desc">贪吃蛇，四方向移动吃果子。目标：吃到 3 个。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/03_astray.png" alt="Astray 截图：3D 迷宫中的小球"></div><div class="name">Astray<span class="tag">网格导航</span></div><div class="desc">在 3D 迷宫中滚球到出口。目标：走出第 3 关。</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/31_wolf3d.png" alt="Wolf3D 截图：第一人称视角的走廊"></div><div class="name">Wolf3D<span class="tag">第一人称</span></div><div class="desc">第一人称射击，转向、前进、开枪、开门。目标：消灭 6 个敌人。</div></div>
+    </div>
+    <figcaption><b>图 1　实验使用的 10 个游戏。</b>截图为 agent 实际看到的画面（已裁剪到游戏区域）。标签为我们按玩法划分的类别，用于定义"同类游戏"。</figcaption>
+  </figure>
+  <div class="col">
+    <p><strong>任务完成度。</strong>每个游戏有一个任务目标，GameWorld 从游戏内部状态计算完成度，取值 0 到 1，1 表示达成目标。agent 看不到这个数，只能看到屏幕上的分数。随机按键的完成度并不低：在全部可打分的任务上平均为 0.40，所以本报告的数字都应与随机水平对照阅读。</p>
+    <p><strong>隐藏种子。</strong>学习时使用一组随机种子，最终成绩在 agent 从未见过的另一组种子上测量，测量期间不允许学习。</p>
+    <p><strong>环境修补。</strong>我们发现 GameWorld 的 165 个任务中有 31 个所引用的评分字段游戏从不输出，任何策略都得 0 分；我们将这些字段映射到游戏实际输出的等价字段，并在每次运行中记录修补内容。</p>
+  </div>
+</section>
+
+<section id="agent">
+  <div class="col">
+    <h2><span class="num">3</span>Agent：一个给自己写程序的玩家</h2>
+    <p>agent 的全部状态是一个目录，由它自己读写，人不介入。目录里有四样东西：跨游戏笔记、单游戏笔记、一个任何游戏都可以导入的共享代码库，以及每个游戏的技能程序的历次版本和对应的成绩簿。</p>
+  </div>
+  <figure>
+    <div class="frame diagram" role="img" aria-label="Agent 结构示意图：截图交给技能程序逐帧决策，技能拿不准时交给模型；每局结束后模型反思并改写工作区，工作区再决定下一局的技能。">
+      <svg viewBox="0 0 860 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah acc" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <text class="s" x="20" y="24">一局之内（每步）</text>
+        <rect class="box" x="20" y="40" width="150" height="66" rx="6"/>
+        <text class="t" x="95" y="68" text-anchor="middle">游戏画面</text>
+        <text class="s" x="95" y="88" text-anchor="middle">一张截图 + 屏幕分数</text>
+        <rect class="box key" x="230" y="40" width="190" height="66" rx="6"/>
+        <text class="t" x="325" y="68" text-anchor="middle">技能程序</text>
+        <text class="s" x="325" y="88" text-anchor="middle">agent 自己写的 Python，毫秒级</text>
+        <rect class="box" x="230" y="140" width="190" height="62" rx="6"/>
+        <text class="t" x="325" y="166" text-anchor="middle">模型看图决策</text>
+        <text class="s" x="325" y="185" text-anchor="middle">技能缺失或拿不准时，约 1 秒</text>
+        <rect class="box" x="480" y="40" width="120" height="66" rx="6"/>
+        <text class="t" x="540" y="78" text-anchor="middle">按键动作</text>
+        <path class="ln" d="M170,73 L226,73" marker-end="url(#a)"/>
+        <path class="ln" d="M420,73 L476,73" marker-end="url(#a)"/>
+        <path class="ln dash" d="M325,106 L325,136" marker-end="url(#a)"/>
+        <path class="ln" d="M420,171 L540,171 L540,110" marker-end="url(#a)"/>
+        <path class="ln dash" d="M540,40 L540,20 L95,20 L95,36" marker-end="url(#a)"/>
+        <text class="s" x="560" y="28">游戏前进一步</text>
+        <text class="s" x="20" y="252">每局结束后</text>
+        <rect class="box" x="20" y="262" width="250" height="56" rx="6"/>
+        <text class="t" x="145" y="285" text-anchor="middle">反思（模型，带思考）</text>
+        <text class="s" x="145" y="304" text-anchor="middle">读成绩簿、程序日志、3 张截图</text>
+        <rect class="box key" x="330" y="236" width="510" height="82" rx="6"/>
+        <text class="t" x="350" y="260">工作区（agent 自己维护的持久目录）</text>
+        <text class="s" x="350" y="282">跨游戏笔记 ≤3000 字 · 单游戏笔记 ≤1500 字</text>
+        <text class="s" x="350" y="302">共享代码库 lib/ · 技能 v1…vN + 成绩簿（可切换、可回滚）</text>
+        <path class="ln acc" d="M270,290 L326,290" marker-end="url(#b)"/>
+        <path class="ln acc" d="M690,236 L690,140 L460,140 L460,92 L424,92" marker-end="url(#b)"/>
+        <text class="s" x="700" y="190">决定下一局用哪个技能版本</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2　Agent 的结构。</b>技能程序逐帧处理截图并输出动作；程序缺失、出错或主动放弃时，由模型看图决策。每局结束后，模型阅读本局的分数、死亡次数、成绩簿、程序日志和截图，决定是否改写技能、回滚到旧版本、向共享代码库添加模块、修改笔记。进入一个新游戏前，agent 先用已有的工作区写出第一版技能。</figcaption>
+  </figure>
+  <div class="col">
+    <p>三个设计约束贯穿全文。第一，<strong>反馈只有人类也能看到的东西</strong>：屏幕上的分数和死亡，评测用的任务完成度对 agent 不可见。第二，<strong>零逐游戏工程</strong>：所有游戏使用完全相同的提示词。第三，<strong>不规定记忆的内容</strong>：我们可以改变反思的时机、可见的信息、存储的上限，但不告诉 agent 应该记什么；如果它没有自发总结出游戏规律，这本身就是一个结果。</p>
+    <p>为了比较，我们还运行了几种对照：随机按键；无记忆（每局都是新手，模型逐帧决策）；文字记忆的两种形式（把所有历史局塞进上下文，或每局重写一份压缩笔记）；以及代码记忆的两种形式（上述固定结构，和只约定一个入口程序 <code>play.py</code>、其余结构完全由 agent 自定的版本）。</p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="col">
+    <h2><span class="num">4</span>结果</h2>
+    <p>我们按三条标准的顺序报告六条发现：前两条关于"在一个游戏里变好"和"自组织记忆"，后四条关于"把经验带走"。</p>
+
+    <h3><span class="num">4.1</span>在单个游戏里，只有写成代码的经验才产生改进</h3>
+    <p>在只玩一个游戏、每个游戏 10 局的条件下，两种文字记忆与无记忆、随机按键几乎没有区别；两种代码记忆则把完成度提高到 0.53 和 0.61，此时 83% 到 92% 的步数由 agent 自己写的程序决定。把程序拿掉，成绩回到起点。</p>
+  </div>
+  <figure class="narrow">
+    <div class="frame"><img src="figs/f1_memory_form.png" alt="柱状图：六种记忆形式在单游戏 10 局后的任务完成度，代码记忆明显高于文字记忆和无记忆"></div>
+    <figcaption><b>图 3　不同记忆形式在单游戏内的学习效果。</b>柱高为 6 个游戏的平均，黑点为单个游戏。文字记忆（黄）与无记忆（灰）不可区分；代码记忆（蓝）明显更高。</figcaption>
+  </figure>
+  <div class="col">
+    <p>原因不难理解。时机类游戏的知识是"障碍离我多远、移动多快、什么时候按键"，这种知识只有写成每帧执行的程序才用得上；写在笔记里，模型每一步仍需要 1 秒去看图，节奏早已错过。唯一的例外印证了这一点：在 Wolf3D 中，压缩笔记达到 0.83，因为这个游戏靠找敌人、找门和探索，属于决策而非反应，文字可以承载。</p>
+    <p>下面是 agent 为 Chrome Dino 写的技能的核心片段，它在之后 5 局 400 步里没有调用一次模型，每局成本约 2 美分：</p>
+<pre><span class="cm"># agent 自己写的 Chrome Dino 技能（节选，共 131 行）</span>
+gray = _gray(frame)
+<span class="hl">dark = gray &lt; 118</span>                      <span class="cm"># 暗像素 = 恐龙、仙人掌、地面</span>
+ground = _ground_row(dark, W, H)         <span class="cm"># 找地面线</span>
+...
+d = prev - obs_l                         <span class="cm"># 障碍两帧之间移动的距离 = 速度</span>
+spd = d if spd is None else 0.6 * spd + 0.4 * d
+dist = obs_l - dino[1]
+<span class="ok">thr = 2.2 * spd</span>                          <span class="cm"># 提前量与速度成正比</span>
+if dist &lt;= thr:
+    return "jump"</pre>
+    <p class="code-note">这段代码同时包含了两种知识：一个与画面绑死的阈值（红色，"灰度低于 118 的像素就是物体"），和一条与画面无关的游戏规律（蓝色，"起跳提前量与速度成正比"）。4.4 和 4.5 将说明，正是这两者混在一起，决定了经验能走多远。</p>
+
+    <h3><span class="num">4.2</span>不给记忆结构，agent 会自己建出单游戏学习所需的结构</h3>
+    <p>我们让 14 个 agent 在只约定入口程序 <code>play.py</code> 的条件下运行，不提供任何笔记、代码库或成绩簿的结构。它们全部自建了笔记，13 个改写自己的程序让它在游戏中写运行日志供下一次反思阅读，8 个建了成绩账本。其中"程序自写日志"是我们设计的固定结构里没有的。它们的成绩不低于固定结构（0.61 对 0.53）。</p>
+  </div>
+  <figure>
+    <div class="frame"><img src="figs/f3_memory_content.png" alt="左：跨游戏笔记中三类要点的数量；右：14 个自由结构 agent 自建各类结构的数量"></div>
+    <figcaption><b>图 4　Agent 记住了什么。</b>(a) 4 个连续玩 6 个游戏的 agent，其跨游戏笔记中的 66 条要点，按内容分类。(b) 14 个没有预设结构的 agent 自发建出的结构；可复用的游戏规律、地图、假设列表一次都没有出现。</figcaption>
+  </figure>
+  <div class="col">
+    <p>没有出现的东西同样重要：没有 agent 建立可在游戏之间复用的规律库，也没有建地图或待验证的假设列表。在单个游戏的范围内，模型已经能自己完成"记录、评估、回滚"这一套工程闭环；跨游戏的载体则需要另一种压力或另一种能力。</p>
+
+    <h3><span class="num">4.3</span>跨游戏收益是常数，同类游戏的经验没有额外好处</h3>
+    <p>我们让 agent 连续玩 6 个游戏，与在同一游戏上从零开始的 agent 配对比较。用学习效率比 TS(N) 衡量：第 N 个游戏上，有经验 agent 的 10 局平均完成度除以从零开始的 agent。若 agent 在越学越快，TS(N) 应随 N 上升。</p>
+  </div>
+  <figure>
+    <div class="frame"><img src="figs/f2_transfer.png" alt="左：TS(N) 随 N 的变化，中位数在 1 附近波动；右：先玩同类游戏和先玩异类游戏相对从零开始的变化"></div>
+    <figcaption><b>图 5　跨游戏迁移。</b>(a) 允许 agent 在进入新游戏前用已有经验先写技能时，N≥2 的 TS 中位数为 1.27（90% bootstrap 区间 [1.05, 1.49]），但对 N 的斜率为 +0.007（区间 [−0.05, +0.07]）。(b) 同一游戏、同一种子，只改变之前玩过的游戏：之前玩过同类游戏不比从零开始好，两种 agent 设计下皆然。黑点为单个游戏。</figcaption>
+  </figure>
+  <div class="col">
+    <p>有经验确实略好，但这个优势在第 2 个游戏和第 6 个游戏上一样大，并不累积。更出乎意料的是，同类游戏的经验没有带来额外好处：在固定结构下，之前只玩过同类游戏的 agent 比从零开始低 0.12；第 1 局的完成度也更低（0.33 对 0.42）。我们还试了三种只改机制、不规定内容的办法：让 agent 在新游戏第 1 局同时运行"继承版"和"从零版"技能并看到两者的分数；对记忆总量设上限迫使它取舍；以及完全放开结构。三者都没有改变这一结果。</p>
+
+    <h3><span class="num">4.4</span>原因之一：它跨游戏记住的几乎都是工程经验</h3>
+    <p>图 4(a) 给出了直接原因。66 条跨游戏要点中，约 40 条是调试和工程方法，约 21 条是图像处理工具，只有 5 条是游戏规律。下面是一个 agent 跨游戏笔记中的三条（原文为英文，此处为译文）：</p>
+    <blockquote>"一次只改一个变量；保持已验证的路径不变；变差就回滚。"<br>"语法或导入错误会让整个技能失效：'技能决策 0%' 是红灯。"<br>"在滚动游戏里，固定宽度的物体停留在危险区的步数等于宽度除以速度。"</blockquote>
+    <p>前两条是让 agent 在任何游戏里更快排除故障的经验，它确实带到了下一个游戏，这大概就是 TS 中位数 1.27 的来源；这类经验在一两个游戏后就攒齐了，所以收益不再增长。第三条是真正的游戏规律，它恰恰也是 Dino 和 Geodash 共享的那条规律，但它只停留在笔记里，从未变成可复用的代码；每到一个新游戏，agent 都重新写一遍 4.1 节里那样的感知加决策程序。</p>
+    <p>同类游戏反而吃亏的原因也在代码里。agent 在 Dino 上写了一个找地面、找障碍的模块放进共享代码库；到 Geodash 时它直接导入这个模块写出第一版技能，第 1 局由这段代码玩出 0.30，而从零开始的 agent 让模型看图玩出 0.49。继承来的是感知代码，而感知恰恰是两个游戏最不一样的部分。</p>
+
+    <h3><span class="num">4.5</span>经验的有效范围止于"画面不变"</h3>
+    <p>如果不同游戏之间差异太大，那么经验在多小的差异内还有用？我们在同一个游戏上构造了一个逐级加大差异的阶梯，比较"把在原版上玩过 10 局的工作区原样搬过来"的有经验 agent 和从零开始的 agent，各玩 6 局：同一游戏换随机种子；改变操作手感（按键持续时间或游戏速度乘以 1.5）；改一条规则（例如 Wolf3D 中敌人血量变为 3 倍）；换皮（截图颜色反转并轮换通道，游戏逻辑不变，同时撤掉文字规则说明）。三个游戏、两个种子，共 87 个 agent。</p>
+  </div>
+  <figure class="narrow">
+    <div class="pair">
+      <div><img src="figs/games/07_chrome-dino.png" alt="Chrome Dino 原版画面：白底黑色恐龙"><div class="lab">原版</div></div>
+      <div><img src="figs/games/07_chrome-dino_skin.png" alt="Chrome Dino 换皮后的画面：黑底浅色恐龙"><div class="lab">换皮：颜色反转，规则一字未改</div></div>
+    </div>
+    <figcaption><b>图 6　阶梯的最后一级"换皮"。</b>对人来说这仍然是同一个游戏。</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="figs/f4_ladder.png" alt="左：从同一游戏到不同游戏六个级别上有经验减从零开始的差；右：同一游戏和换皮两种条件下的学习曲线"></div>
+    <figcaption><b>图 7　经验的有效半径。</b>(a) 有经验 agent 减去从零开始 agent 的完成度。左四组来自阶梯实验（每组 6 对），右两组来自 4.3 的跨游戏实验。(b) 代码记忆 agent 在"同一游戏"和"换皮"两级的学习曲线，各为 6 对的平均。</figcaption>
+  </figure>
+  <div class="col">
+    <p>阶梯给出了一个清晰的分界。在画面不变的三级里，经验让第 1 局平均高 0.01 到 0.13、6 局平均高 0.10 到 0.17，但 6 局之后从零开始的 agent 追了上来，在隐藏种子上有经验的一方不再领先。经验的价值是"起步快几局"，而不是"上限更高"。成绩簿揭示了一个副作用：有经验的 agent 在 108 局里有 81 局切回了"已验证的冠军版本"，从零开始的只有 18 局；经验让它少探索。</p>
+    <p>画面一变，经验就从有利变为有害：换皮后有经验 agent 的第 1 局只有 0.18，从零开始的是 0.45，6 对中 5 对为负。它的改版理由（译文）写得很清楚，先是"切回冠军版本 v2"，然后是"灰度低于 118 的掩码选中了黑色背景，从不起跳"，到第 3 局才改出能适应两种明暗的掩码。它存下的感知代码和"哪个版本是冠军"的记录，在换皮后同时失效。</p>
+    <p>唯一扛住变化的是决策类经验。Wolf3D 中敌人血量变为 3 倍后，有经验 agent 的第 1 局仍高出 0.42，因为它记下的是地图、门和清敌路线，规则变了这些仍然有效。另一个现象值得注意：Dino 的规则改为"只有蹲着才得分"后，12 个 agent、72 局中没有一局系统地尝试过蹲下。这个 agent 不会主动探索去发现规则的变化。</p>
+    <p>把阶梯与 4.3 放在同一张图上（图 7a），经验的价值随差异增大而下降，在"画面改变"这一步就跌到零以下。另一个同类游戏的画面当然也不同，这解释了 4.3 中同类经验为什么没有用。</p>
+
+    <h3><span class="num">4.6</span>连续学习一条游戏链：不越学越快，还会遗忘</h3>
+    <p>前五条结果各自测量一个侧面。为了把"终身学习"作为一个整体来看，我们借用持续学习领域的标准做法（<a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">Lopez-Paz &amp; Ranzato, 2017</a>）：agent 依次学一条游戏链，每学完一关，就在一份冻结的副本上把整条链的每一关都测一遍，得到一张性能矩阵。我们为每一关加上"学会它花了多少局"作为成本。</p>
+  </div>
+  <div class="col tablewrap">
+    <table class="matrix-demo" aria-label="理想的终身学习者的性能矩阵示意">
+      <thead><tr><th></th><th>游戏 A</th><th>游戏 B</th><th>游戏 C</th><th>游戏 D</th><th>学会成本</th></tr></thead>
+      <tbody>
+        <tr><th>学习前</th><td class="u">0.60</td><td class="u">0.60</td><td class="u">0.60</td><td class="u">0.60</td><td></td></tr>
+        <tr><th>学完 A</th><td class="d">0.80</td><td class="u">0.65</td><td class="u">0.65</td><td class="u">0.65</td><td class="n">300</td></tr>
+        <tr><th>学完 B</th><td class="l">0.79</td><td class="d">0.80</td><td class="u">0.66</td><td class="u">0.66</td><td class="n">200</td></tr>
+        <tr><th>学完 C</th><td class="l">0.80</td><td class="l">0.80</td><td class="d">0.80</td><td class="u">0.67</td><td class="n">100</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>上表是一个理想终身学习者应有的样子（数字为示意）：对角线（深色）是学会的水平；右上（浅蓝）是还没学的游戏因为学过前面的而提前变好，即<strong>前向迁移</strong>；左下（浅红）是学过的游戏后来是否掉分，即<strong>遗忘</strong>；最后一列的成本应当递减。我们以 0.8 为"学会"的门槛，每关最多学 8 局，每格在隐藏种子上测 2 局，运行了两条链，各两次：链 A 为三个一键时机游戏接一个第一人称射击（Dino → Geodash → Stack → Wolf3D），链 B 为类型交替的 Snake → Wolf3D → Dino → Stack。</p>
+  </div>
+  <figure>
+    <div class="frame"><img src="figs/f5_chain.png" alt="四个 5 行 4 列的性能矩阵热图"></div>
+    <figcaption><b>图 8　链式性能矩阵。</b>每行为学完前几关之后、在整条链上的完成度（隐藏种子）；粗框为刚学会的那一关；行标签注明学会这一关用了几局（"&gt;8"表示 8 局内未达到门槛）。</figcaption>
+  </figure>
+  <div class="col tablewrap">
+    <table>
+      <thead><tr><th>指标</th><th>实测（4 次运行）</th><th>理想的终身学习者</th></tr></thead>
+      <tbody>
+        <tr><td>学会的水平（对角线，隐藏种子）</td><td class="n">0.70</td><td>接近 1</td></tr>
+        <tr><td>前向迁移</td><td class="n">−0.06</td><td>为正，并随链增长</td></tr>
+        <tr><td>学会成本，按链上位置 1 → 4（局）</td><td class="n">2.8 → 3.5 → 3.8 → 4.3</td><td>递减</td></tr>
+        <tr><td>已学游戏在学完全链后的变化</td><td class="n">−0.10</td><td>约为 0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>矩阵印证了前面的结论，并补上了一块此前看不到的内容。每个游戏能学到"还行"：学习中某一局达到 0.8 后，在隐藏种子上平均只有 0.70，一次达标不等于学会。前向迁移在零附近，学会成本没有随位置下降（未达标按 9 局计；位置与游戏难度在 4 次运行中无法分开）。</p>
+    <p>新的发现是遗忘，而且机制很具体。Snake 的技能里写着 <code>import vision</code>，当时共享代码库里没有这个模块，技能无法启动，于是由模型看图来玩，成绩 1.00。后来学 Dino 时，agent 为 Dino 新写了一个同名模块 <code>vision.py</code>。Snake 的旧技能从此导入成功并接管了游戏，每局死亡 12 次，成绩跌到 0.33。Snake 的技能一个字没改，是另一个游戏写进共享库的代码把它带坏了。这与 4.4 中"继承的感知代码拖累新游戏"是同一个机制在时间另一侧的表现：共享的是感知代码，而感知代码在游戏之间并不通用。</p>
+    <p>需要说明的是，同一份代码在同一组种子上，单局完成度也可在 0.56 到 1.00 之间波动（来自游戏计时的不确定性）。每格只测 2 局时，小于约 0.15 的前向迁移和遗忘与噪声不可区分；上述 Snake 的遗忘是确定性的，其余数字应视为方向。</p>
+  </div>
+</section>
+
+<section class="col" id="discussion">
+  <h2><span class="num">5</span>讨论：还有多远</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>终身游戏 agent 需要的能力</th><th>现状</th><th>证据</th></tr></thead>
+      <tbody>
+        <tr><td>凭反馈在一个游戏里越玩越好</td><td><span class="yes">能</span>，前提是经验写成代码</td><td>4.1</td></tr>
+        <tr><td>自己组织记忆</td><td><span class="yes">能</span>，限于单游戏内的工程闭环</td><td>4.2</td></tr>
+        <tr><td>把一个游戏学到稳定的高水平</td><td>部分：学到约 0.70，表现不稳定</td><td>4.6</td></tr>
+        <tr><td>把经验带到下一个游戏</td><td>常数级收益，不累积</td><td>4.3</td></tr>
+        <tr><td>记住与画面无关的游戏规律</td><td><span class="no">否</span>，规律只留在笔记里</td><td>4.4</td></tr>
+        <tr><td>经验在环境变化后仍然有效</td><td>仅限画面不变；决策类经验例外</td><td>4.5</td></tr>
+        <tr><td>主动探索以发现规则变化</td><td><span class="no">否</span></td><td>4.5</td></tr>
+        <tr><td>越学越快</td><td><span class="no">否</span></td><td>4.3、4.6</td></tr>
+        <tr><td>学新游戏不忘旧游戏</td><td><span class="no">否</span>，共享代码造成遗忘</td><td>4.6</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三条标准中，前两条已经可以做到，第三条断在一个明确的位置。agent 的经验以"感知代码加成绩记录"的形式存在，两者都以像素为坐标。这一点解释了全部负面结果：同类游戏迁移为负，因为继承的感知代码首先要被修掉；收益不随经历增长，因为工程经验一两个游戏后就饱和；换皮即失效；学新游戏时改写共享感知代码，又会把旧游戏带坏。</p>
+  <p class="takeaway">我们离终身游戏 agent 的距离，不在于它学不会，而在于它学会的东西只在它看到的像素里有效。</p>
+  <p>缺口的形状因此也清楚了：缺的是一层<strong>与画面无关的表示</strong>（物体、相对位置、速度，以及建立在它们之上的规律），以及在这层表示上做抽象的倾向。Dino 技能里的 <code>thr = 2.2 * spd</code> 和笔记里那条"停留步数等于宽度除以速度"说明，模型能写出这样的规律；Wolf3D 的例外说明，这类知识一旦以与画面无关的形式存在，就能跨过规则变化。问题在于它从未把规律从感知代码中分离出来、单独保存和复用。</p>
+  <p><strong>与已有工作的关系。</strong>近期在 12 个虚幻引擎游戏上的 <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">OmniGameArena</a> 发现，反思学到的技能在原版上的提升不能预测它在留出变体上的表现；其中一个游戏上原版提升最大（+201%）的模型，在全部三个变体上都是负迁移，与我们的换皮结果一致。在规则陌生的文字游戏上，<a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">Learn2Play Bench</a> 发现保留完整的行动与反馈记录比把经验总结成规则更有效，并且人类玩家比 agent 尝试更多样的策略、更少重复动作，与我们观察到的"守着冠军版本、不探索"相呼应。在文本环境中，有跨环境迁移证据的记忆机制主要是从成功与失败轨迹中对比蒸馏出子任务级经验（<a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">ExpeL</a>、<a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">ReasoningBank</a>），以及以下游任务回报训练的记忆整理器（<a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">Auto-Dreamer</a>）；以提示词驱动的离线"睡眠整理"目前没有任务迁移的证据。让 agent 改写自身学习流程的工作（如 <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">Hyperagents</a>）显示，学到的学习流程可以加快新领域的起步，但证据仍然有限。据我们所知，尚无工作在像素输入下、以从零开始的对照测量过不同游戏之间的技能迁移。</p>
+  <p><strong>下一步。</strong>链式性能矩阵本身可以作为比较不同 agent 设计的统一尺子：对角线衡量学习能力，右上衡量泛化，左下衡量遗忘，成本列衡量是否越学越快。在把尺子做准（每格更多测量、记录共享代码的版本、以连续达标定义"学会"）之后，可以依次检验三类不规定内容的机制：修改共享代码前先在已学游戏上做回归测试（针对遗忘）；定期把所有游戏的技能和曲线并列，要求 agent 寻找共性（针对迁移）；最后以矩阵指标为目标，让 agent 自己改进自己的学习流程。另外两个变量同样需要检验：更强的基座模型是否会自发分离规律与感知，以及共享结构更深、并会反复出现变体的游戏流，是否能为抽象提供足够的回报。</p>
+</section>
+
+<section class="col" id="limits">
+  <h2><span class="num">6</span>局限</h2>
+  <ul class="plain">
+    <li><strong>样本量小。</strong>多数条件每格只有 1 到 2 个 agent，同条件下两个 agent 的成绩可相差一倍。各结论的方向在 5 到 9 个游戏或多数配对上一致，单个数值的可信范围约为 ±0.15 到 ±0.3。</li>
+    <li><strong>只有一个模型。</strong>更强的模型是否会自发抽象游戏规律，是本报告最直接的未检验变量。</li>
+    <li><strong>经历很短。</strong>每个游戏 6 到 10 局，最多连续 6 个游戏；多个任务在 1.0 处封顶，压缩了差异。</li>
+    <li><strong>游戏范围。</strong>仅限可暂停的 2D 和简单 3D 浏览器游戏；实时、多人、长时程的策略游戏不在本报告范围内。</li>
+    <li><strong>个别实验无信息或证据单薄。</strong>Dino 的"只有蹲下才得分"一级两边全为 0；"决策类经验耐变化"只在 Wolf3D 一个游戏上观察到；链式实验只有两条链、各两次运行，且链上位置与游戏难度混杂。</li>
+  </ul>
+</section>
+
+<section class="col" id="appendix">
+  <h2><span class="num">A</span>附录</h2>
+  <h3>实验规模与成本</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>项目</th><th>数值</th></tr></thead>
+      <tbody>
+        <tr><td>总局数 / 环境步数</td><td class="n">4 743 局 / 约 116 万步</td></tr>
+        <tr><td>API 总花费（按高峰价计，为上限）</td><td class="n">$313</td></tr>
+        <tr><td>一局，由模型逐步决策</td><td class="n">$0.05–0.25，8–15 分钟</td></tr>
+        <tr><td>一局，由技能程序接管</td><td class="n">$0.01–0.03，2–3 分钟</td></tr>
+        <tr><td>相似度阶梯（87 个 agent）</td><td class="n">$67</td></tr>
+        <tr><td>链式实验（4 次运行）</td><td class="n">$17</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>实现细节</h3>
+  <ul class="plain">
+    <li>每步决策关闭模型的思考模式（约 1.2 秒一步）；局后反思开启中等强度的思考，输出预算 4.8 万 token，若思考耗尽预算导致空回复则降低强度重试。</li>
+    <li>技能程序在独立子进程中运行，每帧时限 2 秒；出错或超时时本步交给模型。</li>
+    <li>笔记超出上限时截断；共享代码库不设上限（另有一组实验将全部记忆限制在 8000 字以内，见 4.3）。</li>
+    <li>操作手感变化在按键执行层实现；改规则通过对游戏源码打补丁生成独立副本；换皮在截图上做颜色变换，不影响游戏逻辑。</li>
+    <li>链式实验中，学习在某一局达到门槛或第 8 局后停止，且该局之后不再反思，以保证被测量的就是实际取得成绩的版本。</li>
+  </ul>
+  <h3>参考文献</h3>
+  <ol class="refs">
+    <li>GameWorld. <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">arXiv:2604.07429</a></li>
+    <li>Wang et al. Voyager: An Open-Ended Embodied Agent with Large Language Models. <a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">arXiv:2305.16291</a></li>
+    <li>Tan et al. Cradle: Towards General Computer Control. <a href="https://arxiv.org/abs/2403.03186" target="_blank" rel="noopener">arXiv:2403.03186</a></li>
+    <li>Lopez-Paz &amp; Ranzato. Gradient Episodic Memory for Continual Learning. <a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">arXiv:1706.08840</a></li>
+    <li>Zhao et al. ExpeL: LLM Agents Are Experiential Learners. <a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">arXiv:2308.10144</a></li>
+    <li>ReasoningBank. <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">arXiv:2509.25140</a></li>
+    <li>Auto-Dreamer. <a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">arXiv:2605.20616</a></li>
+    <li>Hyperagents. <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">arXiv:2603.19461</a></li>
+    <li>OmniGameArena. <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">arXiv:2606.09826</a></li>
+    <li>Learn2Play Bench. <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">arXiv:2610.08215</a></li>
+  </ol>
+  <p class="foot">游戏截图取自 GameWorld 收录的第三方网页游戏，版权归各自所有者，仅用于研究说明。改规则所用的游戏副本由补丁脚本在本地生成，不随代码分发。</p>
+</section>
+</main>
+</body>
+</html>

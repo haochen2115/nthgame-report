@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A self-programming agent on ten browser games: it learns each game, but what it learns stays anchored to the pixels it has seen.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How far are we from a lifelong game agent?">
+<meta property="og:description" content="A self-programming agent on ten browser games: it learns each game, but what it learns stays anchored to the pixels it has seen.">
+<meta property="og:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How far are we from a lifelong game agent?">
+<meta name="twitter:description" content="A self-programming agent on ten browser games: it learns each game, but what it learns stays anchored to the pixels it has seen.">
+<meta name="twitter:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
+<title>How far are we from a lifelong game agent?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~42em) with figures allowed to break out to a wider measure; lab-notebook restraint, ink-blue accent shared with the figures. */
+:root {
+  --bg: #fbfbf8;
+  --fg: #1f2328;
+  --muted: #5e646d;
+  --rule: #e2e3df;
+  --panel: #f2f3ef;
+  --accent: #2f6690;
+  --warm: #b8492f;
+  --figbg: #ffffff;
+  --code-bg: #f1f2ee;
+  --serif: "Source Serif 4", "Georgia", serif;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --measure: 40rem;
+  --wide: 62rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --fg: #e4e5e1; --muted: #a0a6ae; --rule: #2d3239; --panel: #1d2126;
+    --accent: #8ab8dc; --warm: #e58a72; --figbg: #f6f6f3; --code-bg: #1f242a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --fg: #e4e5e1; --muted: #a0a6ae; --rule: #2d3239; --panel: #1d2126;
+  --accent: #8ab8dc; --warm: #e58a72; --figbg: #f6f6f3; --code-bg: #1f242a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16.5px; line-height: 1.7; padding-inline: 20px; padding-block: 0 4rem; }
+main { max-width: var(--wide); margin: 0 auto; }
+.col { max-width: var(--measure); margin-inline: auto; }
+header.top { padding-block: 3.5rem 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; }
+.eyebrow { font-size: 0.8rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 2.75rem); line-height: 1.3; margin: 0.6rem 0 0.8rem; text-wrap: balance; }
+.subtitle { font-size: 1.12rem; color: var(--muted); margin: 0 0 0.6rem; text-wrap: balance; }
+.byline { font-size: 0.95rem; margin: 0 0 1.2rem; }
+.byline .email { user-select: all; }
+.meta { font-size: 0.85rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; }
+.meta span { font-variant-numeric: tabular-nums; }
+h2 { font-family: var(--serif); font-weight: 700; font-size: 1.55rem; line-height: 1.4; margin: 3.4rem 0 1rem; text-wrap: balance; }
+h2 .num { color: var(--accent); margin-right: 0.5rem; font-variant-numeric: tabular-nums; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.18rem; line-height: 1.5; margin: 2.4rem 0 0.6rem; text-wrap: balance; }
+h3 .num { color: var(--muted); font-family: var(--sans); font-weight: 500; font-size: 0.9rem; margin-right: 0.5rem; }
+p { margin: 0 0 1.05rem; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+strong { font-weight: 700; }
+.abstract { background: var(--panel); border-radius: 6px; padding: 1.4rem 1.6rem; margin-bottom: 1rem; }
+.abstract h2 { margin: 0 0 0.6rem; font-size: 1.1rem; }
+.abstract p:last-child { margin-bottom: 0; }
+.claims { list-style: none; padding: 0; margin: 1rem 0 1.4rem; display: grid; gap: 0.55rem; counter-reset: c; }
+.claims li { counter-increment: c; display: grid; grid-template-columns: 1.8rem 1fr; gap: 0.4rem; }
+.claims li::before { content: counter(c); font-family: var(--serif); font-weight: 700; color: var(--accent); }
+ul.plain { padding-left: 1.2rem; margin: 0 0 1.05rem; }
+ul.plain li { margin-bottom: 0.35rem; }
+figure { margin: 2rem auto; max-width: var(--wide); }
+figure.narrow { max-width: var(--measure); }
+figure .frame { background: var(--figbg); border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem; }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { font-size: 0.88rem; line-height: 1.7; color: var(--muted); max-width: var(--measure); margin: 0.7rem auto 0; }
+figcaption b { color: var(--fg); font-weight: 600; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.9rem; }
+.game { margin: 0; min-width: 0; }
+.game .shot { background: #111; border-radius: 4px; overflow: hidden; aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; }
+.game .shot img { width: 100%; height: 100%; object-fit: contain; }
+.game .name { font-weight: 700; font-size: 0.92rem; margin-top: 0.4rem; }
+.game .desc { font-size: 0.8rem; line-height: 1.55; color: var(--muted); }
+.tag { display: inline-block; font-size: 0.7rem; letter-spacing: 0.04em; padding: 0 0.45rem; border-radius: 3px; background: var(--panel); color: var(--muted); margin-left: 0.3rem; vertical-align: 1px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.pair img { border-radius: 4px; }
+.pair .lab { font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 0.3rem; }
+.tablewrap { overflow-x: auto; margin: 1.2rem 0 1.6rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; line-height: 1.6; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 700; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.03em; border-bottom: 1.5px solid var(--fg); }
+td.n { text-align: right; white-space: nowrap; }
+.yes { color: var(--accent); font-weight: 700; }
+.no { color: var(--warm); font-weight: 700; }
+pre { background: var(--code-bg); border-radius: 6px; padding: 1rem 1.1rem; overflow-x: auto; font-family: var(--mono); font-size: 0.8rem; line-height: 1.6; margin: 1.2rem 0 0.4rem; }
+code { font-family: var(--mono); font-size: 0.86em; }
+pre .hl { color: var(--warm); font-weight: 500; }
+pre .ok { color: var(--accent); font-weight: 500; }
+pre .cm { color: var(--muted); }
+.code-note { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.4rem; }
+blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px solid var(--rule); color: var(--muted); font-size: 0.95rem; }
+.diagram { overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 620px; height: auto; }
+.diagram .box { fill: var(--panel); stroke: var(--rule); stroke-width: 1.2; }
+.diagram .box.key { fill: var(--bg); stroke: var(--accent); stroke-width: 1.6; }
+.diagram .t { fill: var(--fg); font-family: var(--sans); font-size: 13px; font-weight: 600; }
+.diagram .s { fill: var(--muted); font-family: var(--sans); font-size: 11.5px; }
+.diagram .ln { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.diagram .ln.acc { stroke: var(--accent); }
+.diagram .ln.dash { stroke-dasharray: 5 4; }
+.diagram .ah { fill: var(--muted); }
+.diagram .ah.acc { fill: var(--accent); }
+.matrix-demo td, .matrix-demo th { text-align: center; }
+.matrix-demo td.d { background: color-mix(in srgb, var(--accent) 22%, transparent); font-weight: 700; }
+.matrix-demo td.u { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.matrix-demo td.l { background: color-mix(in srgb, var(--warm) 9%, transparent); }
+.toc { font-size: 0.88rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin-top: 1.4rem; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--accent); }
+.refs { font-size: 0.85rem; line-height: 1.7; color: var(--muted); padding-left: 1.2rem; }
+.refs li { margin-bottom: 0.4rem; }
+.foot { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2rem; }
+.lang a { color: var(--muted); }
+.takeaway { font-family: var(--serif); font-size: 1.2rem; line-height: 1.7; font-weight: 600; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 1.2rem 0; margin: 2rem 0; text-wrap: balance; }
+@media (max-width: 560px) {
+  body { font-size: 15.5px; padding-inline: 16px; }
+  .pair { grid-template-columns: 1fr; }
+  .abstract { padding: 1.1rem 1.1rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+</head>
+<body>
+<main>
+<header class="top col">
+  <div class="eyebrow">NthGame technical report · October 2026<span class="lang"> · <a href="zh.html" data-lang="zh">中文</a></span></div>
+  <h1>How far are we from a lifelong game agent?</h1>
+  <p class="subtitle">Evidence from a self-programming agent on ten browser games</p>
+  <p class="byline">Hao Chen · <span class="email">haochen2115@gmail.com</span> · <a href="https://github.com/haochen2115" target="_blank" rel="noopener">github.com/haochen2115</a></p>
+  <div class="meta">
+    <span>Model: DeepSeek V4.1 Flash (screenshots only)</span>
+    <span>Environment: GameWorld browser games</span>
+    <span>4,743 attempts · 1.16M environment steps</span>
+    <span>API cost $313 · no GPU</span>
+  </div>
+  <nav class="toc" aria-label="Contents">
+    <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#setup">2 Environment</a><a href="#agent">3 Agent</a><a href="#results">4 Results</a><a href="#discussion">5 Discussion</a><a href="#limits">6 Limitations</a><a href="#appendix">Appendix</a>
+  </nav>
+</header>
+
+<section class="col" id="abstract">
+  <div class="abstract">
+    <h2>Abstract</h2>
+    <p>A lifelong game agent should learn any new game from feedback alone, and should learn each new game faster than the last. We test how far current models are from this goal with an agent that never updates its weights. It keeps a persistent workspace in which it writes its own skill programs, notes and scoreboards. Every game receives the same prompts, with no per-game human engineering.</p>
+    <p>Across ten browser games and roughly 4,700 attempts we find the following. The agent learns within a single game, but only when it writes its experience as executable code. Given no memory structure at all, it invents the structures that within-game learning needs. What it learns, however, barely travels. The benefit of prior games is a constant that does not grow with experience, and experience from games of the same genre gives no extra benefit. A ladder of increasingly large changes shows that experience helps only while the screen looks the same: inverting the colours of an otherwise identical game turns experience from an asset into a liability. When the agent learns a chain of games in sequence, it neither learns faster over time nor keeps what it learned, because new code written for one game breaks the skills of another.</p>
+    <p>Within-game self-improvement and self-organised memory are within reach today. The main gap on the way to a lifelong game agent is that the agent's experience is anchored to pixels: it lacks a representation that is independent of what the screen looks like.</p>
+  </div>
+</section>
+
+<section class="col" id="intro">
+  <h2><span class="num">1</span>Introduction</h2>
+  <p>Experienced human players have an ability that is rarely measured. Given a game they have never seen, they become competent within a few rounds, and they get faster at this the more games they have played. We call a system with this ability a <strong>lifelong game agent</strong>. It needs at least three capabilities:</p>
+  <ul class="plain">
+    <li><strong>Improve within a game</strong> from the game's own feedback, not from rules a human wrote for it.</li>
+    <li><strong>Organise its own memory</strong>: decide what to keep and how, without a human designing data structures for each game.</li>
+    <li><strong>Carry experience forward</strong>: the cost of learning the N-th game falls as N grows, and games already learned are not forgotten.</li>
+  </ul>
+  <p>Large models make it possible to try this without training any weights. A vision-language model can read a screen, write code and reflect on failure. Give it a workspace it can read and rewrite across attempts, and in principle it can bank each lesson and reuse it on the next game. Prior work has done versions of this inside a single world such as Minecraft (Voyager, Cradle and others), but mostly through structured game interfaces, and without measuring transfer <em>between different games</em> against agents that start from scratch.</p>
+  <p>This report uses a deliberately simple and general agent to ask: <strong>by the three criteria above, how far are we from a lifelong game agent today?</strong> Our contributions are:</p>
+  <ol class="claims">
+    <li>An evaluation protocol with zero per-game engineering: single-game learning, cross-game sequences, a similarity ladder, and a continual-learning performance matrix, each paired with a from-scratch control.</li>
+    <li>Six empirical findings covering the three capabilities, each backed by mechanistic evidence from the code and notes the agent wrote.</li>
+    <li>A diagnosis of the gap: experience stops helping as soon as the screen changes, because the agent stores it in pixel coordinates.</li>
+  </ol>
+</section>
+
+<section id="setup">
+  <div class="col">
+    <h2><span class="num">2</span>Environment and metrics</h2>
+    <p>We use the <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">GameWorld</a> suite of browser games. At every step the agent sees one screenshot and chooses one of a handful of key actions registered for the game. The game is paused while the model thinks, so inference speed does not affect play. An attempt is 400 steps, and each action lasts 0.1 to 0.2 seconds. We selected ten games that score reliably and differ in how they are played, and grouped them into four genres:</p>
+  </div>
+  <figure>
+    <div class="gallery">
+      <div class="game"><div class="shot"><img src="figs/games/07_chrome-dino.png" alt="Chrome Dino: the dinosaur running on the ground line"></div><div class="name">Chrome Dino<span class="tag">timing</span></div><div class="desc">The dinosaur runs on its own; press to jump over cacti. Goal: 200 points.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/14_geodash.png" alt="Geodash: a cube approaching a spike"></div><div class="name">Geodash<span class="tag">timing</span></div><div class="desc">A cube moves forward; press to jump over spikes. Goal: 100 points.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/27_stack.png" alt="Stack: a sliding block above the tower"></div><div class="name">Stack<span class="tag">timing</span></div><div class="desc">A block slides back and forth; press to drop it on the tower. Overhangs are cut off. Goal: 10 blocks.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/05_breakout.png" alt="Breakout: brick wall and paddle"></div><div class="name">Breakout<span class="tag">steering</span></div><div class="desc">Move the paddle to keep the ball in play. Goal: clear the level.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/10_doodle-jump.png" alt="Doodle Jump: the character and green platforms"></div><div class="name">Doodle Jump<span class="tag">steering</span></div><div class="desc">The character bounces on its own; steer onto higher platforms. Goal: height 3,000.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/11_edge-surf.png" alt="Edge Surf: a surfer among obstacles"></div><div class="name">Edge Surf<span class="tag">steering</span></div><div class="desc">Surf downhill and steer around obstacles. Goal: 1,200 points without dying.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/23_pacman.png" alt="Pac-Man: maze and ghosts"></div><div class="name">Pac-Man<span class="tag">grid navigation</span></div><div class="desc">Eat dots and avoid ghosts in a maze. Goal: 2,000 points.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/15_google-snake.png" alt="Snake: the snake and an apple"></div><div class="name">Snake<span class="tag">grid navigation</span></div><div class="desc">Steer the snake to eat fruit. Goal: 3 fruit.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/03_astray.png" alt="Astray: a ball in a 3D maze"></div><div class="name">Astray<span class="tag">grid navigation</span></div><div class="desc">Roll a ball through a 3D maze to the exit. Goal: finish level 3.</div></div>
+      <div class="game"><div class="shot"><img src="figs/games/31_wolf3d.png" alt="Wolf3D: first-person corridor"></div><div class="name">Wolf3D<span class="tag">first person</span></div><div class="desc">First-person shooter: turn, move, shoot, open doors. Goal: defeat all 6 enemies.</div></div>
+    </div>
+    <figcaption><b>Figure 1. The ten games.</b> Screenshots are what the agent actually sees, cropped to the game area. Genre tags are ours and define what counts as a "similar" game.</figcaption>
+  </figure>
+  <div class="col">
+    <p><strong>Task progress.</strong> Each game has a task goal. GameWorld computes progress toward it from the game's internal state, on a scale from 0 to 1, where 1 means the goal is met. The agent never sees this number, only the score shown on screen. Random play is not near zero: it averages 0.40 over all scoreable tasks, so every number in this report should be read against the random level.</p>
+    <p><strong>Hidden seeds.</strong> The agent learns on one set of random seeds. Final performance is measured on a separate set it has never seen, with learning switched off.</p>
+    <p><strong>Environment fixes.</strong> In 31 of GameWorld's 165 tasks, the scoring rule refers to a field the game never emits, so every policy scores 0. We mapped these fields to the equivalent fields the games do emit, and log the mapping with every run.</p>
+  </div>
+</section>
+
+<section id="agent">
+  <div class="col">
+    <h2><span class="num">3</span>The agent: a player that programs itself</h2>
+    <p>The agent's entire state is a directory that it reads and writes itself; no human edits it. The directory holds four things: cross-game notes, per-game notes, a shared code library that any game's skill can import, and, for every game, all versions of its skill program with a scoreboard for each.</p>
+  </div>
+  <figure>
+    <div class="frame diagram" role="img" aria-label="Agent architecture: each screenshot goes to the skill program, which falls back to the model when unsure; after each attempt the model reflects and rewrites the workspace, which determines the next attempt's skill.">
+      <svg viewBox="0 0 860 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah acc" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <text class="s" x="20" y="24">During an attempt (every step)</text>
+        <rect class="box" x="20" y="40" width="150" height="66" rx="6"/>
+        <text class="t" x="95" y="68" text-anchor="middle">Game screen</text>
+        <text class="s" x="95" y="88" text-anchor="middle">screenshot + score</text>
+        <rect class="box key" x="230" y="40" width="190" height="66" rx="6"/>
+        <text class="t" x="325" y="68" text-anchor="middle">Skill program</text>
+        <text class="s" x="325" y="88" text-anchor="middle">Python it wrote; milliseconds</text>
+        <rect class="box" x="230" y="140" width="190" height="62" rx="6"/>
+        <text class="t" x="325" y="166" text-anchor="middle">Model reads the screen</text>
+        <text class="s" x="325" y="185" text-anchor="middle">if no skill or unsure; ~1 s</text>
+        <rect class="box" x="480" y="40" width="120" height="66" rx="6"/>
+        <text class="t" x="540" y="78" text-anchor="middle">Key action</text>
+        <path class="ln" d="M170,73 L226,73" marker-end="url(#a)"/>
+        <path class="ln" d="M420,73 L476,73" marker-end="url(#a)"/>
+        <path class="ln dash" d="M325,106 L325,136" marker-end="url(#a)"/>
+        <path class="ln" d="M420,171 L540,171 L540,110" marker-end="url(#a)"/>
+        <path class="ln dash" d="M540,40 L540,20 L95,20 L95,36" marker-end="url(#a)"/>
+        <text class="s" x="560" y="28">game advances one step</text>
+        <text class="s" x="20" y="252">After each attempt</text>
+        <rect class="box" x="20" y="262" width="250" height="56" rx="6"/>
+        <text class="t" x="145" y="285" text-anchor="middle">Reflection (model, with reasoning)</text>
+        <text class="s" x="145" y="304" text-anchor="middle">reads scoreboard, run logs, 3 screenshots</text>
+        <rect class="box key" x="330" y="236" width="510" height="82" rx="6"/>
+        <text class="t" x="350" y="260">Workspace (a persistent directory the agent maintains)</text>
+        <text class="s" x="350" y="282">cross-game notes ≤3,000 chars · per-game notes ≤1,500 chars</text>
+        <text class="s" x="350" y="302">shared library lib/ · skills v1…vN + scoreboard (switchable, reversible)</text>
+        <path class="ln acc" d="M270,290 L326,290" marker-end="url(#b)"/>
+        <path class="ln acc" d="M690,236 L690,140 L460,140 L460,92 L424,92" marker-end="url(#b)"/>
+        <text class="s" x="700" y="190">selects the next attempt's skill</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 2. Agent architecture.</b> The skill program maps each screenshot to an action. When the program is missing, crashes or defers, the model looks at the screen and decides. After each attempt the model reads the score, deaths, scoreboard, program logs and screenshots, then decides whether to rewrite the skill, roll back to an earlier version, add a module to the shared library, or edit its notes. Before a new game, the agent uses its existing workspace to write a first skill.</figcaption>
+  </figure>
+  <div class="col">
+    <p>Three design constraints hold throughout. First, <strong>feedback is limited to what a human player sees</strong>: the on-screen score and deaths. The task-progress metric is hidden from the agent. Second, <strong>no per-game engineering</strong>: every game gets identical prompts. Third, <strong>we never prescribe the content of memory</strong>. We may change when the agent reflects, what it can see and how much it may store, but we never tell it what to remember. If it does not discover game rules on its own, that is itself a result.</p>
+    <p>For comparison we also ran random play; a memoryless agent (a newcomer every attempt, with the model choosing every action); two forms of text memory (the full history of all attempts in context, or a compact note rewritten after each attempt); and two forms of code memory (the fixed layout above, and a variant in which only the entry program <code>play.py</code> is specified and the agent organises everything else).</p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="col">
+    <h2><span class="num">4</span>Results</h2>
+    <p>We report six findings in the order of the three capabilities. The first two concern improving within a game and organising memory; the last four concern carrying experience forward.</p>
+
+    <h3><span class="num">4.1</span>Within a game, only experience written as code produces improvement</h3>
+    <p>When the agent plays a single game for 10 attempts, both forms of text memory are indistinguishable from no memory and close to random play. Both forms of code memory raise task progress to 0.53 and 0.61; at that point 83% to 92% of all steps are decided by programs the agent wrote. Remove the programs and performance returns to where it started.</p>
+  </div>
+  <figure class="narrow">
+    <div class="frame"><img src="figs/en/f1_memory_form.png" alt="Bar chart of task progress after 10 attempts for six memory forms; code memory is clearly above text memory and no memory"></div>
+    <figcaption><b>Figure 3. Within-game learning by memory form.</b> Bars are the mean over six games; dots are individual games. Text memory (yellow) cannot be told apart from no memory (grey); code memory (blue) is clearly higher.</figcaption>
+  </figure>
+  <div class="col">
+    <p>The reason is straightforward. Knowledge in a timing game is "how far is the obstacle, how fast is it moving, when should I press". It is only useful as a program that runs on every frame; written as a note, the model still needs a second per step to read the screen, and the moment has passed. The one exception confirms this. In Wolf3D, a compact text note reaches 0.83, because the game is about finding enemies, finding doors and exploring. These are decisions rather than reflexes, and text can carry them.</p>
+    <p>Below is the core of the skill the agent wrote for Chrome Dino. Over the next five attempts of 400 steps it did not call the model once, and each attempt cost about two cents:</p>
+<pre><span class="cm"># Chrome Dino skill written by the agent (excerpt; 131 lines in total)</span>
+gray = _gray(frame)
+<span class="hl">dark = gray &lt; 118</span>                      <span class="cm"># dark pixels = dinosaur, cacti, ground</span>
+ground = _ground_row(dark, W, H)         <span class="cm"># find the ground line</span>
+...
+d = prev - obs_l                         <span class="cm"># obstacle shift between frames = speed</span>
+spd = d if spd is None else 0.6 * spd + 0.4 * d
+dist = obs_l - dino[1]
+<span class="ok">thr = 2.2 * spd</span>                          <span class="cm"># jump lead grows with speed</span>
+if dist &lt;= thr:
+    return "jump"</pre>
+    <p class="code-note">The code holds two kinds of knowledge at once: a threshold tied to how the screen looks (red: "pixels darker than 118 are objects") and a rule of the game that does not depend on the screen (blue: "jump earlier the faster things move"). Sections 4.4 and 4.5 show that this entanglement determines how far experience can travel.</p>
+
+    <h3><span class="num">4.2</span>Given no memory structure, the agent builds what within-game learning needs</h3>
+    <p>We ran 14 agents whose only convention was the entry program <code>play.py</code>, with no structure for notes, a library or a scoreboard. All 14 created notes; 13 rewrote their own program so that it writes a run log during play for the next reflection to read; 8 kept a score ledger. Self-written run logs were not part of the fixed layout we designed. These agents performed no worse than the fixed layout (0.61 against 0.53).</p>
+  </div>
+  <figure>
+    <div class="frame"><img src="figs/en/f3_memory_content.png" alt="Left: counts of three kinds of bullets in cross-game notes; right: how many of 14 self-organising agents built each structure"></div>
+    <figcaption><b>Figure 4. What the agent remembers.</b> (a) The 66 bullets in the cross-game notes of four agents that each played six games in a row, by content. (b) Structures that 14 agents built when given no structure. Reusable game rules, maps and hypothesis lists never appeared.</figcaption>
+  </figure>
+  <div class="col">
+    <p>What did not appear matters as much. No agent built a library of rules reusable across games, a map, or a list of hypotheses to test. Within a single game the model already closes the engineering loop of recording, evaluating and rolling back on its own. A carrier of knowledge across games would need a different pressure or a different capability.</p>
+
+    <h3><span class="num">4.3</span>The cross-game benefit is constant, and similar games give no extra benefit</h3>
+    <p>We had agents play six games in a row and paired each game with an agent that started that game from scratch. We measure transfer with the learning-efficiency ratio TS(N): on the N-th game, the experienced agent's mean task progress over 10 attempts divided by that of the fresh agent. If the agent learns faster over time, TS(N) should rise with N.</p>
+  </div>
+  <figure>
+    <div class="frame"><img src="figs/en/f2_transfer.png" alt="Left: TS(N) against N, with the median fluctuating around 1; right: change relative to a fresh agent after similar or different games"></div>
+    <figcaption><b>Figure 5. Transfer across games.</b> (a) When the agent may use its experience to write a skill before its first attempt at a new game, the median TS for N ≥ 2 is 1.27 (90% bootstrap interval [1.05, 1.49]), but the slope over N is +0.007 (interval [−0.05, +0.07]). (b) Same game, same seed, different history: having played only similar games beforehand is no better than starting fresh, under both agent designs. Dots are individual games.</figcaption>
+  </figure>
+  <div class="col">
+    <p>Experience helps a little, but the advantage is the same on the second game as on the sixth; it does not accumulate. More surprisingly, experience from similar games gives no extra benefit. With the fixed layout, an agent that had played only similar games scored 0.12 below a fresh agent, and its first attempt was worse too (0.33 against 0.42). We tried three mechanism changes that do not prescribe content: running an "inherited" and a "from scratch" skill side by side in the first attempt of each new game and showing the agent both scores; capping total memory so the agent must choose what to keep; and removing all structure. None changed this result.</p>
+
+    <h3><span class="num">4.4</span>Why: what it remembers across games is almost entirely engineering</h3>
+    <p>Figure 4(a) gives the direct reason. Of the 66 cross-game bullets, about 40 are debugging and engineering practice, about 21 are image-processing tools, and only 5 are rules of a game. Three bullets from one agent's cross-game notes, in its own words (lightly abridged):</p>
+    <blockquote>"Change one lever per attempt; keep the proven path bit-identical; revert if worse."<br>"A syntax or import error makes the whole skill dead. '0% skill decided' is a red flag."<br>"In a scrolling game, the number of steps a fixed-width object stays in the danger zone is width divided by speed."</blockquote>
+    <p>The first two help the agent debug faster in any game. It did carry them to the next game, which probably explains the median TS of 1.27; they are complete after one or two games, so the benefit stops growing. The third is a genuine game rule, and exactly the rule that Chrome Dino and Geodash share. But it stayed in the notes and never became reusable code. On every new game the agent wrote a fresh perception-plus-decision program like the one in Section 4.1.</p>
+    <p>The code also explains why similar games hurt. On Chrome Dino the agent wrote a module that finds the ground and obstacles and put it in the shared library. On Geodash it imported that module to write its first skill, which scored 0.30 on the first attempt; a fresh agent that let the model read the screen scored 0.49. What it inherited was perception code, and perception is exactly where the two games differ most.</p>
+
+    <h3><span class="num">4.5</span>Experience reaches only as far as the screen stays the same</h3>
+    <p>If different games are too far apart, how small a change can experience survive? We built a ladder of increasingly large changes to the same game. We compared an experienced agent, whose workspace from 10 attempts on the original game was copied over unchanged, with a fresh agent, over 6 attempts each. The rungs were: the same game with a new seed; a change in control feel (key hold duration or game speed × 1.5); one changed rule (for example, enemies in Wolf3D have three times the health); and a reskin (the screenshot's colours are inverted and the channels rotated, game logic unchanged, and the written rules withheld). Three games and two seeds gave 87 agents in total.</p>
+  </div>
+  <figure class="narrow">
+    <div class="pair">
+      <div><img src="figs/games/07_chrome-dino.png" alt="Chrome Dino, original: dark dinosaur on white"><div class="lab">Original</div></div>
+      <div><img src="figs/games/07_chrome-dino_skin.png" alt="Chrome Dino, reskinned: light dinosaur on black"><div class="lab">Reskin: colours inverted, rules unchanged</div></div>
+    </div>
+    <figcaption><b>Figure 6. The last rung of the ladder.</b> To a person this is still the same game.</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="figs/en/f4_ladder.png" alt="Left: experienced minus fresh across six levels from same game to different game; right: learning curves for the same game and the reskin"></div>
+    <figcaption><b>Figure 7. The reach of experience.</b> (a) Task progress of the experienced agent minus the fresh agent. The four left groups come from the ladder (6 pairs each); the two right groups come from the cross-game experiment in Section 4.3. (b) Learning curves of the code-memory agent on the "same game" and "reskin" rungs, averaged over 6 pairs each.</figcaption>
+  </figure>
+  <div class="col">
+    <p>The ladder draws a clear line. On the three rungs where the screen is unchanged, experience raises the first attempt by 0.01 to 0.13 and the six-attempt average by 0.10 to 0.17. After six attempts, though, the fresh agent catches up, and on hidden seeds the experienced agent no longer leads. Experience buys a faster start, not a higher ceiling. The scoreboards reveal a side effect: experienced agents switched back to their "proven champion" version in 81 of 108 attempts, fresh agents in 18. Experience made the agent explore less.</p>
+    <p>Once the screen changes, experience turns from an asset into a liability. After the reskin the experienced agent's first attempt scored 0.18 against the fresh agent's 0.45, and 5 of 6 pairs were negative. Its own revision notes tell the story. First it switched back to "champion v2"; then it wrote that "v2's fixed dark-mask (gray&lt;118) selects the black background on the now-dark-mode page, so no jumps are ever emitted"; only on the third attempt did it produce a mask that works in both light and dark renderings. The perception code it stored, and its record of which version was the champion, both broke at once.</p>
+    <p>The one kind of experience that survived change was about decisions. When enemies in Wolf3D had three times the health, the experienced agent's first attempt was still 0.42 higher, because it had stored the map, the doors and a route for clearing enemies, all of which remained valid. One more observation: when Chrome Dino was changed so that points accrue only while ducking, none of 12 agents, over 72 attempts, systematically tried ducking. The agent does not explore to discover that the rules have changed.</p>
+    <p>Placing the ladder and Section 4.3 on one chart (Figure 7a), the value of experience falls as the change grows and drops below zero at the step where the screen changes. A different game of the same genre also looks different, which explains why similar-game experience did not help in Section 4.3.</p>
+
+    <h3><span class="num">4.6</span>Learning a chain of games: no speed-up, and forgetting</h3>
+    <p>Each of the previous results measures one aspect. To look at lifelong learning as a whole, we adopt the standard evaluation of continual learning (<a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">Lopez-Paz &amp; Ranzato, 2017</a>). The agent learns a chain of games one after another. After each game, a frozen copy of the agent is tested on every game in the chain, which yields a performance matrix. We add the number of attempts it took to learn each game as its cost.</p>
+  </div>
+  <div class="col tablewrap">
+    <table class="matrix-demo" aria-label="Illustrative performance matrix of an ideal lifelong learner">
+      <thead><tr><th></th><th>Game A</th><th>Game B</th><th>Game C</th><th>Game D</th><th>Cost to learn</th></tr></thead>
+      <tbody>
+        <tr><th>Before</th><td class="u">0.60</td><td class="u">0.60</td><td class="u">0.60</td><td class="u">0.60</td><td></td></tr>
+        <tr><th>After A</th><td class="d">0.80</td><td class="u">0.65</td><td class="u">0.65</td><td class="u">0.65</td><td class="n">300</td></tr>
+        <tr><th>After B</th><td class="l">0.79</td><td class="d">0.80</td><td class="u">0.66</td><td class="u">0.66</td><td class="n">200</td></tr>
+        <tr><th>After C</th><td class="l">0.80</td><td class="l">0.80</td><td class="d">0.80</td><td class="u">0.67</td><td class="n">100</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>The table shows what an ideal lifelong learner would look like (illustrative numbers). The diagonal (dark) is the level reached. The upper right (light blue) is games not yet learned getting better because of the games before them, i.e. <strong>forward transfer</strong>. The lower left (light red) is whether learned games later lose ground, i.e. <strong>forgetting</strong>. The cost column should fall. We set 0.8 as the threshold for "learned", allowed at most 8 learning attempts per game, and measured each cell with 2 attempts on hidden seeds. We ran two chains, twice each. Chain A is three one-key timing games followed by a first-person shooter (Dino → Geodash → Stack → Wolf3D). Chain B alternates genres (Snake → Wolf3D → Dino → Stack).</p>
+  </div>
+  <figure>
+    <div class="frame"><img src="figs/en/f5_chain.png" alt="Four performance-matrix heat maps with five rows and four columns"></div>
+    <figcaption><b>Figure 8. Chain performance matrices.</b> Each row is task progress on every game in the chain (hidden seeds) after learning the first few games. The outlined cell is the game just learned. Row labels give the number of attempts needed to learn it ("&gt;8" means the threshold was not reached within 8 attempts).</figcaption>
+  </figure>
+  <div class="col tablewrap">
+    <table>
+      <thead><tr><th>Measure</th><th>Observed (4 runs)</th><th>Ideal lifelong learner</th></tr></thead>
+      <tbody>
+        <tr><td>Level reached (diagonal, hidden seeds)</td><td class="n">0.70</td><td>close to 1</td></tr>
+        <tr><td>Forward transfer</td><td class="n">−0.06</td><td>positive, growing along the chain</td></tr>
+        <tr><td>Cost to learn, by position 1 → 4 (attempts)</td><td class="n">2.8 → 3.5 → 3.8 → 4.3</td><td>falling</td></tr>
+        <tr><td>Change on learned games by the end of the chain</td><td class="n">−0.10</td><td>about 0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>The matrices confirm the earlier findings and reveal something the earlier experiments could not see. Each game is learned to a moderate level: after one attempt reaches 0.8, the hidden-seed average is only 0.70, so reaching the threshold once is not the same as having learned the game. Forward transfer is around zero, and the cost of learning does not fall along the chain (games not learned within 8 attempts count as 9; with four runs, position cannot be separated from game difficulty).</p>
+    <p>The new finding is forgetting, with a concrete mechanism. The Snake skill contained <code>import vision</code>, but the shared library had no such module at the time, so the skill could not start and the model played by reading the screen, scoring 1.00. Later, while learning Chrome Dino, the agent wrote a new module called <code>vision.py</code> for Dino. From then on, the old Snake skill imported successfully and took over the game. It died 12 times per attempt and its score fell to 0.33. The Snake skill had not changed by a single character; code that another game had written into the shared library broke it. This is the mechanism of Section 4.4 seen from the other side of time: what is shared is perception code, and perception code does not generalise across games.</p>
+    <p>A caveat: the same code on the same seeds can vary from 0.56 to 1.00 per attempt, because game timing is not fully deterministic. With only 2 measurements per cell, forward transfer and forgetting smaller than about 0.15 cannot be distinguished from noise. The Snake case above is deterministic; the other numbers should be read as directions.</p>
+  </div>
+</section>
+
+<section class="col" id="discussion">
+  <h2><span class="num">5</span>Discussion: how far are we?</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Capability a lifelong game agent needs</th><th>Status</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>Improve within a game from feedback</td><td><span class="yes">Yes</span>, if experience is written as code</td><td>4.1</td></tr>
+        <tr><td>Organise its own memory</td><td><span class="yes">Yes</span>, within a single game's engineering loop</td><td>4.2</td></tr>
+        <tr><td>Learn a game to a stable high level</td><td>Partly: about 0.70, and unstable</td><td>4.6</td></tr>
+        <tr><td>Carry experience to the next game</td><td>A constant benefit that does not accumulate</td><td>4.3</td></tr>
+        <tr><td>Store game rules independent of the screen</td><td><span class="no">No</span>; rules stay in notes</td><td>4.4</td></tr>
+        <tr><td>Keep experience valid when the environment changes</td><td>Only if the screen is unchanged; decision knowledge is the exception</td><td>4.5</td></tr>
+        <tr><td>Explore to discover changed rules</td><td><span class="no">No</span></td><td>4.5</td></tr>
+        <tr><td>Learn faster over time</td><td><span class="no">No</span></td><td>4.3, 4.6</td></tr>
+        <tr><td>Learn new games without forgetting old ones</td><td><span class="no">No</span>; shared code causes forgetting</td><td>4.6</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Of the three capabilities, the first two are within reach; the third breaks at a specific point. The agent's experience exists as perception code plus score records, and both are expressed in pixel coordinates. This accounts for every negative result. Transfer between similar games is negative because inherited perception code must first be repaired. The benefit stops growing because engineering lessons saturate after one or two games. Reskinning breaks everything. And rewriting shared perception code for a new game breaks the old ones.</p>
+  <p class="takeaway">The distance to a lifelong game agent is not that it cannot learn. It is that what it learns only holds in the pixels it has seen.</p>
+  <p>The shape of the gap is therefore clear. What is missing is a <strong>representation independent of appearance</strong> (objects, relative positions, speeds, and rules stated over them) together with a tendency to abstract at that level. The line <code>thr = 2.2 * spd</code> in the Dino skill and the note "steps in the danger zone equal width divided by speed" show that the model can write such rules. The Wolf3D exception shows that once such knowledge exists in a form that does not depend on appearance, it survives a rule change. The problem is that the agent never separates rules from perception code to store and reuse them on their own.</p>
+  <p><strong>Relation to prior work.</strong> On twelve Unreal Engine games, <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">OmniGameArena</a> finds that a skill's gain on the original task does not predict its transfer to held-out variants; in one game the model with the largest original gain (+201%) transferred negatively to all three variants, consistent with our reskin result. On text games with unfamiliar rules, <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">Learn2Play Bench</a> finds that keeping complete records of actions and feedback works better than summarising experience into rules, and that human players try more varied strategies and repeat actions less than agents, which echoes the "stick with the champion, do not explore" behaviour we observe. In text environments, the memory mechanisms with evidence of cross-environment transfer are contrastive distillation of sub-task lessons from successful and failed trajectories (<a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">ExpeL</a>, <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">ReasoningBank</a>) and memory consolidators trained on downstream task reward (<a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">Auto-Dreamer</a>). Prompt-driven offline "sleep" consolidation has no evidence of task transfer so far. Work in which agents rewrite their own learning procedure, such as <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">Hyperagents</a>, shows that a learned learning procedure can speed up the start on a new domain, though the evidence remains limited. To our knowledge, no prior work has measured skill transfer between different games from pixels against a from-scratch control.</p>
+  <p><strong>Next steps.</strong> The chain performance matrix can serve as a single yardstick for comparing agent designs: the diagonal measures learning, the upper right generalisation, the lower left forgetting, and the cost column whether learning speeds up. Once the yardstick is more precise (more measurements per cell, versioning of the shared library, and "learned" defined as two consecutive attempts above threshold), three content-neutral mechanisms can be tested in turn: regression-testing learned games before any change to shared code (aimed at forgetting); periodically laying out all games' skills and curves side by side and asking the agent for what they have in common (aimed at transfer); and finally letting the agent improve its own learning procedure with the matrix as the objective. Two further variables need testing: whether a stronger base model separates rules from perception on its own, and whether a stream of games with deeper shared structure and recurring variants rewards abstraction enough to make it worthwhile.</p>
+</section>
+
+<section class="col" id="limits">
+  <h2><span class="num">6</span>Limitations</h2>
+  <ul class="plain">
+    <li><strong>Small samples.</strong> Most conditions have one or two agents per cell, and two agents under identical conditions can differ by a factor of two. Each conclusion's direction holds across five to nine games or across most pairs; individual values are reliable to roughly ±0.15 to ±0.3.</li>
+    <li><strong>One model.</strong> Whether a stronger model would abstract game rules on its own is the most direct untested variable.</li>
+    <li><strong>Short lives.</strong> Six to ten attempts per game and at most six games in a row; several tasks hit the ceiling of 1.0, which compresses differences.</li>
+    <li><strong>Scope of games.</strong> Pausable 2D and simple 3D browser games only. Real-time, multiplayer and long-horizon strategy games are out of scope.</li>
+    <li><strong>Uninformative or thin evidence in places.</strong> The "points only while ducking" rung on Chrome Dino scored 0 on both sides; the robustness of decision knowledge was observed in Wolf3D only; the chain experiment has two chains with two runs each, and position is confounded with game difficulty.</li>
+  </ul>
+</section>
+
+<section class="col" id="appendix">
+  <h2><span class="num">A</span>Appendix</h2>
+  <h3>Scale and cost</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Item</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Attempts / environment steps</td><td class="n">4,743 / about 1.16M</td></tr>
+        <tr><td>Total API cost (at peak prices; an upper bound)</td><td class="n">$313</td></tr>
+        <tr><td>One attempt, model decides every step</td><td class="n">$0.05–0.25, 8–15 min</td></tr>
+        <tr><td>One attempt, skill program in control</td><td class="n">$0.01–0.03, 2–3 min</td></tr>
+        <tr><td>Similarity ladder (87 agents)</td><td class="n">$67</td></tr>
+        <tr><td>Chain experiment (4 runs)</td><td class="n">$17</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Implementation details</h3>
+  <ul class="plain">
+    <li>Per-step decisions run with the model's reasoning off (about 1.2 s per step). Reflection after each attempt uses medium reasoning with a 48k-token output budget, retried at lower effort if reasoning exhausts the budget and returns an empty reply.</li>
+    <li>Skill programs run in a separate process with a 2-second limit per frame; on error or timeout, the model decides that step.</li>
+    <li>Notes are truncated at their limits; the shared library has no limit (a separate experiment capped all memory at 8,000 characters; see Section 4.3).</li>
+    <li>Control-feel changes are applied in the key-execution layer; rule changes are patches that generate separate local copies of the game; reskins transform the screenshot colours and leave game logic untouched.</li>
+    <li>In the chain experiment, learning stops when an attempt reaches the threshold or after the 8th attempt, and no reflection follows that attempt, so the version measured is the version that earned the score.</li>
+  </ul>
+  <h3>References</h3>
+  <ol class="refs">
+    <li>Ouyang et al. GameWorld: Towards Standardized and Verifiable Evaluation of Multimodal Game Agents. <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">arXiv:2604.07429</a></li>
+    <li>Wang et al. Voyager: An Open-Ended Embodied Agent with Large Language Models. <a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">arXiv:2305.16291</a></li>
+    <li>Tan et al. Cradle: Empowering Foundation Agents Towards General Computer Control. <a href="https://arxiv.org/abs/2403.03186" target="_blank" rel="noopener">arXiv:2403.03186</a></li>
+    <li>Lopez-Paz &amp; Ranzato. Gradient Episodic Memory for Continual Learning. <a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">arXiv:1706.08840</a></li>
+    <li>Zhao et al. ExpeL: LLM Agents Are Experiential Learners. <a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">arXiv:2308.10144</a></li>
+    <li>Ouyang et al. ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory. <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">arXiv:2509.25140</a></li>
+    <li>Ye et al. Auto-Dreamer: Learning Offline Memory Consolidation for Language Agents. <a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">arXiv:2605.20616</a></li>
+    <li>Zhang et al. Hyperagents. <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">arXiv:2603.19461</a></li>
+    <li>Lin et al. OmniGameArena: A Unified UE5 Benchmark for VLM Game Agents with Improvement Dynamics. <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">arXiv:2606.09826</a></li>
+    <li>Li et al. Learn2Play Bench: How Well Do LLM Agents Learn from Experience in Unfamiliar Environments? <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">arXiv:2610.08215</a></li>
+  </ol>
+  <p class="foot">Game screenshots come from third-party web games included in GameWorld; all rights belong to their owners, and they are shown here for research illustration only. The game copies used for rule changes are generated locally by patch scripts and are not distributed with the code.</p>
+</section>
+</main>
+</body>
+</html>
