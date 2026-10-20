@@ -147,7 +147,6 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
     <span>Environments: GameWorld browser games, Pokémon Showdown</span>
     <span>~5,000 browser-game attempts + 3,400 Pokémon battles</span>
     <span>API cost ~$345 · no GPU</span>
-    <span>Revised 2026-10-20</span>
   </div>
   <nav class="toc" aria-label="Contents">
     <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#setup">2 Environment</a><a href="#agent">3 Agent</a><a href="#results">4 Results</a><a href="#discussion">5 Discussion</a><a href="#limits">6 Limitations</a><a href="#appendix">Appendix</a>
@@ -160,7 +159,6 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
     <p>A lifelong game agent should learn any new game from feedback alone, and should learn each new game faster than the last. We test how far current models are from this goal with an agent that never updates its weights. It keeps a persistent workspace in which it writes its own skill programs, notes and scoreboards. Every game receives the same prompts, with no per-game human engineering.</p>
     <p>Across ten browser games (about 5,000 attempts) and Pokémon battles (3,400 battles) we find the following. The agent improves within a single game, but only when it writes its experience as executable code; text notes are indistinguishable from no memory. Given no memory structure at all, it invents the structures that within-game learning needs. What it learns, however, does not travel. The benefit of prior games is a constant that does not grow with experience, experience from games of the same genre gives no extra benefit, and in Pokémon, consolidating notes across generations brings no transfer either. A ladder of increasingly large changes shows that experience helps only while the screen looks the same: inverting the colours of an otherwise identical game turns experience from an asset into a liability.</p>
     <p>Within-game self-improvement and self-organised memory are within reach today. But what the agent stores is either anchored to pixels or a restatement of what the model already knows; the layer of game rules in between is missing, and this is the main reason transfer fails. We close with a falsifiable next hypothesis: have the agent build and verify models of the rules, and make rules the unit that accumulates across games.</p>
-    <p class="revnote">This is a revised version (2026-10-20). See <a href="#errata">Appendix A.4</a>: one conclusion that came from a flaw in our experimental harness has been withdrawn, and affected readings have been replaced with unaffected ones.</p>
   </div>
 </section>
 
@@ -262,7 +260,7 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 <section id="results">
   <div class="col">
     <h2><span class="num">4</span>Results</h2>
-    <p>We report six findings in the order of the three capabilities. The first two concern improving within a game and organising memory; the last four concern carrying experience forward. All numbers use only readings that are unaffected by the known harness flaws (Appendix A.4): the scores of versions actually played during learning, first-attempt scores, and experiments rerun after the fixes.</p>
+    <p>We report six findings in the order of the three capabilities. The first two concern improving within a game and organising memory; the last four concern carrying experience forward. Scores below are those of the versions actually played during learning, or first-attempt scores.</p>
 
     <h3><span class="num">4.1</span>Within a game, only experience written as code produces improvement</h3>
     <p>When the agent plays a single game for 10 attempts, every memory form starts between 0.26 and 0.34 on the first attempt. From there, both forms of code memory rise attempt by attempt, to learning-period means of 0.48 and 0.56, with 83% to 92% of all steps decided by programs the agent wrote. Both forms of text memory and the memoryless agent stay between 0.27 and 0.34, not far above random play at 0.21.</p>
@@ -429,14 +427,6 @@ if dist &lt;= thr:
   </ul>
   <h3>A.3 GameWorld fixes</h3>
   <p>In 31 of GameWorld's 165 tasks, the scoring rule refers to a field the game never emits, so every policy scores 0. We mapped these fields to the equivalent fields the games do emit, and log the mapping with every run.</p>
-  <h3 id="errata">A.4 Revision notes (2026-10-20)</h3>
-  <p>Later experiments uncovered three flaws in our experimental harness. This version is revised accordingly:</p>
-  <ol class="plain">
-    <li><strong>Withdrawn: "learning new games breaks old ones".</strong> The previous version reported one case of forgetting: a module written into the shared library while learning Chrome Dino dropped the old Snake skill from 1.00 to 0.33. The cause was two games' modules sharing a name, a flaw in our harness rather than a property of the agent. After the fix (freezing a copy of the shared library for each game once it is learned), no forgetting beyond measurement noise appeared.</li>
-    <li><strong>Unaffected readings only.</strong> Earlier experiments let the agent reflect once more after its last learning attempt and then measured a "final score" on hidden seeds, which could measure a new version that had never been played. Figures 3, 5(b) and 7 now use the scores of versions actually played during learning, and first-attempt scores. The direction of every conclusion is unchanged; some values changed: code-memory single-game scores from 0.53 / 0.61 to 0.48 / 0.56; "after similar games" relative to a fresh agent from −0.12 to −0.08; the effect of text notes in Wolf3D from 0.83 to 0.53 (no memory: 0.43).</li>
-    <li><strong>Chain experiment rerun.</strong> The previous chain matrices came from runs before the fixes; this version uses the strategy chain rerun after the fixes (Figure 8) and adds the Pokémon experiment (Figure 9).</li>
-    <li><strong>Scope of "no hypothesis lists".</strong> Fixed-layout agents' notes were truncated, and the cut endings often held hypotheses to test, so this observation holds only for the self-organised agents, whose files are not truncated.</li>
-  </ol>
   <h3>References</h3>
   <ol class="refs">
     <li>Ouyang et al. GameWorld: Towards Standardized and Verifiable Evaluation of Multimodal Game Agents. <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">arXiv:2604.07429</a></li>

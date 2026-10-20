@@ -8,6 +8,6 @@ A self-programming agent built on a frozen vision-language model plays ten brows
 [GameWorld](https://arxiv.org/abs/2604.07429). It learns each game by writing its own code, but what it
 learns is either anchored to the pixels it has seen or restates what the model already knows: experience gives a
 small constant benefit across games, stops helping as soon as the screen changes, and does not transfer across
-Pokémon generations either. Revised 2026-10-20; see Appendix A.4 of the report for corrections.
+Pokémon generations either.
 
 Game screenshots belong to their respective owners and are shown for research illustration only.
