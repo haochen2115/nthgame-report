@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="一个给自己写代码的 agent 在 10 个浏览器游戏上的证据：它能学会每个游戏，但学到的东西只在它见过的像素里有效。">
+<meta name="description" content="一个给自己写代码的 agent 在浏览器小游戏和宝可梦对战上的证据：它能在单个游戏里变强，但学到的东西要么绑定像素、要么只是常识，所以无法迁移。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="我们离终身游戏 agent 还有多远？">
-<meta property="og:description" content="一个给自己写代码的 agent 在 10 个浏览器游戏上的证据：它能学会每个游戏，但学到的东西只在它见过的像素里有效。">
+<meta property="og:description" content="一个给自己写代码的 agent 在浏览器小游戏和宝可梦对战上的证据：它能在单个游戏里变强，但学到的东西要么绑定像素、要么只是常识，所以无法迁移。">
 <meta property="og:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="我们离终身游戏 agent 还有多远？">
-<meta name="twitter:description" content="一个给自己写代码的 agent 在 10 个浏览器游戏上的证据：它能学会每个游戏，但学到的东西只在它见过的像素里有效。">
+<meta name="twitter:description" content="一个给自己写代码的 agent 在浏览器小游戏和宝可梦对战上的证据：它能在单个游戏里变强，但学到的东西要么绑定像素、要么只是常识，所以无法迁移。">
 <meta name="twitter:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
 <title>我们离终身游戏 agent 还有多远？</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,6 +122,7 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 .toc a:hover { color: var(--accent); }
 .refs { font-size: 0.85rem; line-height: 1.7; color: var(--muted); padding-left: 1.2rem; }
 .refs li { margin-bottom: 0.4rem; }
+.revnote { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 0.6rem; margin-top: 0.4rem; }
 .foot { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2rem; }
 .lang a { color: var(--muted); }
 .takeaway { font-family: var(--serif); font-size: 1.2rem; line-height: 1.7; font-weight: 600; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 1.2rem 0; margin: 2rem 0; text-wrap: balance; }
@@ -139,13 +140,14 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 <header class="top col">
   <div class="eyebrow">NthGame 技术报告 · 2026 年 10 月<span class="lang"> · <a href="index.html" data-lang="en">English</a></span></div>
   <h1>我们离终身游戏 agent 还有多远？</h1>
-  <p class="subtitle">一个给自己写代码的 agent 在 10 个浏览器游戏上的证据</p>
+  <p class="subtitle">一个给自己写代码的 agent 在浏览器小游戏和宝可梦对战上的证据</p>
   <p class="byline">Hao Chen · <span class="email">haochen2115@gmail.com</span></p>
   <div class="meta">
     <span>模型：DeepSeek V4.1 Flash（只看屏幕截图）</span>
-    <span>环境：GameWorld 浏览器游戏</span>
-    <span>4 743 局 · 116 万环境步</span>
-    <span>API 花费 $313 · 不使用 GPU</span>
+    <span>环境：GameWorld 浏览器游戏、Pokémon Showdown</span>
+    <span>约 5 000 局小游戏 + 3 400 局宝可梦对战</span>
+    <span>API 花费约 $345 · 不使用 GPU</span>
+    <span>修订版 2026-10-20</span>
   </div>
   <nav class="toc" aria-label="目录">
     <a href="#abstract">摘要</a><a href="#intro">1 引言</a><a href="#setup">2 环境与度量</a><a href="#agent">3 Agent</a><a href="#results">4 结果</a><a href="#discussion">5 讨论</a><a href="#limits">6 局限</a><a href="#appendix">附录</a>
@@ -156,8 +158,9 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
   <div class="abstract">
     <h2>摘要</h2>
     <p>一个终身游戏 agent 应当能凭反馈把任何新游戏玩好，并且玩过的游戏越多，学下一个游戏就越快。我们用一个不更新权重的 agent 检验这个目标离现实有多远：它在一个持久工作区里给自己写技能程序、记笔记、记成绩，所有游戏使用完全相同的提示词，没有任何逐游戏的人工设计。</p>
-    <p>在 10 个浏览器游戏、约 4 700 局实验中，我们发现：agent 能在单个游戏内学会，但前提是把经验写成可执行的代码；不给它任何记忆结构，它会自己发明出单游戏学习所需的结构。然而它学到的东西几乎带不走：跨游戏收益是一个不随经历增长的常数，同类游戏的经验也没有额外好处。逐级加大环境变化后可以看到，经验只在画面不变时有用，仅把画面颜色反转，经验就从有利变为有害。按持续学习的方式连续学一条游戏链时，它既没有越学越快，还会因为共享代码被改写而忘掉学过的游戏。</p>
-    <p>结论是：单游戏内的自我改进和自组织记忆已经可以实现，但 agent 存下的经验绑定在像素上，缺少一层与画面无关的表示，这是通往终身游戏 agent 的主要缺口。</p>
+    <p>在 10 个浏览器游戏（约 5 000 局）和宝可梦对战（3 400 局）上，我们发现：agent 能在单个游戏内越玩越好，但前提是把经验写成可执行的代码，文字笔记与没有记忆不可区分；不给它任何记忆结构，它会自己发明出单游戏学习所需的结构。然而它学到的东西带不走：跨游戏收益是一个不随经历增长的常数，同类游戏的经验没有额外好处，在宝可梦里加入跨世代总结也没有带来迁移。逐级加大环境变化后可以看到，经验只在画面不变时有用，仅把画面颜色反转，经验就从有利变为有害。</p>
+    <p>结论是：单游戏内的自我改进和自组织记忆已经可以实现；但 agent 存下的经验要么绑定在像素上，要么只是复述模型本来就知道的常识，缺少"游戏规则"这一层，这是迁移失败的主要原因。我们据此提出下一步的可证伪假设：让 agent 建立并验证规则模型，把规则作为跨游戏积累的单位。</p>
+    <p class="revnote">本文为修订版（2026-10-20）。修订内容见<a href="#errata">附录 A.4</a>：撤回了一条源于实验框架缺陷的结论，并把受影响的读数换成不受影响的读数。</p>
   </div>
 </section>
 
@@ -174,7 +177,7 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
   <ol class="claims">
     <li>一套零逐游戏工程的评测方案，包括单游戏学习、跨游戏序列、相似度阶梯和借自持续学习的"链式性能矩阵"，均以从零开始的 agent 作配对对照。</li>
     <li>六条实证发现，分别对应上面三条标准，并给出每条结论背后的机制证据（agent 写下的代码和笔记）。</li>
-    <li>对缺口的定位：经验的有效范围止于"画面不变"，原因是 agent 的经验以像素为坐标。</li>
+    <li>对缺口的定位：经验要么绑定像素、要么只是常识，缺少"游戏规则"这一层；并据此提出一个可证伪的下一步假设。</li>
   </ol>
 </section>
 
@@ -259,17 +262,17 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 <section id="results">
   <div class="col">
     <h2><span class="num">4</span>结果</h2>
-    <p>我们按三条标准的顺序报告六条发现：前两条关于"在一个游戏里变好"和"自组织记忆"，后四条关于"把经验带走"。</p>
+    <p>我们按三条标准的顺序报告六条发现：前两条关于"在一个游戏里变好"和"自组织记忆"，后四条关于"把经验带走"。所有数字都只使用不受已知实验缺陷影响的读数（见附录 A.4）：学习期间实际玩过的版本的成绩、第 1 局成绩，以及修复后重跑的实验。</p>
 
     <h3><span class="num">4.1</span>在单个游戏里，只有写成代码的经验才产生改进</h3>
-    <p>在只玩一个游戏、每个游戏 10 局的条件下，两种文字记忆与无记忆、随机按键几乎没有区别；两种代码记忆则把完成度提高到 0.53 和 0.61，此时 83% 到 92% 的步数由 agent 自己写的程序决定。把程序拿掉，成绩回到起点。</p>
+    <p>在只玩一个游戏、每个游戏 10 局的条件下，各种记忆形式第 1 局的成绩都在 0.26 到 0.34 之间。此后，两种代码记忆逐局上升，学习期平均达到 0.48 和 0.56，其中 83% 到 92% 的步数由 agent 自己写的程序决定；两种文字记忆和无记忆一直停在 0.27 到 0.34，与随机按键的 0.21 相差不大。</p>
   </div>
   <figure class="narrow">
-    <div class="frame"><img src="figs/f1_memory_form.png" alt="柱状图：六种记忆形式在单游戏 10 局后的任务完成度，代码记忆明显高于文字记忆和无记忆"></div>
-    <figcaption><b>图 3　不同记忆形式在单游戏内的学习效果。</b>柱高为 6 个游戏的平均，黑点为单个游戏。文字记忆（黄）与无记忆（灰）不可区分；代码记忆（蓝）明显更高。</figcaption>
+    <div class="frame"><img src="figs/f1_memory_form.png" alt="五种记忆形式在 10 局中的学习曲线，代码记忆逐局上升，文字记忆和无记忆基本持平"></div>
+    <figcaption><b>图 3　单游戏内的学习曲线。</b>每一点是学习期间该局实际使用的版本的任务完成度，6 个游戏平均。代码记忆（蓝）越玩越好；文字记忆（黄）与无记忆（灰）基本持平。</figcaption>
   </figure>
   <div class="col">
-    <p>原因不难理解。时机类游戏的知识是"障碍离我多远、移动多快、什么时候按键"，这种知识只有写成每帧执行的程序才用得上；写在笔记里，模型每一步仍需要 1 秒去看图，节奏早已错过。唯一的例外印证了这一点：在 Wolf3D 中，压缩笔记达到 0.83，因为这个游戏靠找敌人、找门和探索，属于决策而非反应，文字可以承载。</p>
+    <p>原因不难理解。时机类游戏的知识是"障碍离我多远、移动多快、什么时候按键"，这种知识只有写成每帧执行的程序才用得上；写在笔记里，模型每一步仍需要约 1 秒去看图，节奏早已错过。Wolf3D 是唯一一个文字笔记明显高于无记忆的游戏（学习期平均 0.53 对 0.43），这个游戏靠找敌人、找门和探索，属于决策而非反应。</p>
     <p>下面是 agent 为 Chrome Dino 写的技能的核心片段，它在之后 5 局 400 步里没有调用一次模型，每局成本约 2 美分：</p>
 <pre><span class="cm"># agent 自己写的 Chrome Dino 技能（节选，共 131 行）</span>
 gray = _gray(frame)
@@ -285,7 +288,7 @@ if dist &lt;= thr:
     <p class="code-note">这段代码同时包含了两种知识：一个与画面绑死的阈值（红色，"灰度低于 118 的像素就是物体"），和一条与画面无关的游戏规律（蓝色，"起跳提前量与速度成正比"）。4.4 和 4.5 将说明，正是这两者混在一起，决定了经验能走多远。</p>
 
     <h3><span class="num">4.2</span>不给记忆结构，agent 会自己建出单游戏学习所需的结构</h3>
-    <p>我们让 14 个 agent 在只约定入口程序 <code>play.py</code> 的条件下运行，不提供任何笔记、代码库或成绩簿的结构。它们全部自建了笔记，13 个改写自己的程序让它在游戏中写运行日志供下一次反思阅读，8 个建了成绩账本。其中"程序自写日志"是我们设计的固定结构里没有的。它们的成绩不低于固定结构（0.61 对 0.53）。</p>
+    <p>我们让 14 个 agent 在只约定入口程序 <code>play.py</code> 的条件下运行，不提供任何笔记、代码库或成绩簿的结构。它们全部自建了笔记，13 个改写自己的程序让它在游戏中写运行日志供下一次反思阅读，8 个建了成绩账本。其中"程序自写日志"是我们设计的固定结构里没有的。它们的成绩不低于固定结构（学习期平均 0.56 对 0.48）。</p>
   </div>
   <figure>
     <div class="frame"><img src="figs/f3_memory_content.png" alt="左：跨游戏笔记中三类要点的数量；右：14 个自由结构 agent 自建各类结构的数量"></div>
@@ -295,14 +298,14 @@ if dist &lt;= thr:
     <p>没有出现的东西同样重要：没有 agent 建立可在游戏之间复用的规律库，也没有建地图或待验证的假设列表。在单个游戏的范围内，模型已经能自己完成"记录、评估、回滚"这一套工程闭环；跨游戏的载体则需要另一种压力或另一种能力。</p>
 
     <h3><span class="num">4.3</span>跨游戏收益是常数，同类游戏的经验没有额外好处</h3>
-    <p>我们让 agent 连续玩 6 个游戏，与在同一游戏上从零开始的 agent 配对比较。用学习效率比 TS(N) 衡量：第 N 个游戏上，有经验 agent 的 10 局平均完成度除以从零开始的 agent。若 agent 在越学越快，TS(N) 应随 N 上升。</p>
+    <p>我们让 agent 连续玩 6 个游戏，与在同一游戏上从零开始的 agent 配对比较。用学习效率比 TS(N) 衡量：第 N 个游戏上，有经验 agent 的学习期平均完成度除以从零开始的 agent。若 agent 在越学越快，TS(N) 应随 N 上升。</p>
   </div>
   <figure>
     <div class="frame"><img src="figs/f2_transfer.png" alt="左：TS(N) 随 N 的变化，中位数在 1 附近波动；右：先玩同类游戏和先玩异类游戏相对从零开始的变化"></div>
-    <figcaption><b>图 5　跨游戏迁移。</b>(a) 允许 agent 在进入新游戏前用已有经验先写技能时，N≥2 的 TS 中位数为 1.27（90% bootstrap 区间 [1.05, 1.49]），但对 N 的斜率为 +0.007（区间 [−0.05, +0.07]）。(b) 同一游戏、同一种子，只改变之前玩过的游戏：之前玩过同类游戏不比从零开始好，两种 agent 设计下皆然。黑点为单个游戏。</figcaption>
+    <figcaption><b>图 5　跨游戏迁移。</b>(a) 允许 agent 在进入新游戏前用已有经验先写技能时，N≥2 的 TS 中位数为 1.27（90% bootstrap 区间 [1.05, 1.49]），但对 N 的斜率为 +0.007（区间 [−0.05, +0.07]）。(b) 同一游戏、同一种子，只改变之前玩过的游戏，比较学习期平均完成度。黑点为单个游戏。</figcaption>
   </figure>
   <div class="col">
-    <p>有经验确实略好，但这个优势在第 2 个游戏和第 6 个游戏上一样大，并不累积。更出乎意料的是，同类游戏的经验没有带来额外好处：在固定结构下，之前只玩过同类游戏的 agent 比从零开始低 0.12；第 1 局的完成度也更低（0.33 对 0.42）。我们还试了三种只改机制、不规定内容的办法：让 agent 在新游戏第 1 局同时运行"继承版"和"从零版"技能并看到两者的分数；对记忆总量设上限迫使它取舍；以及完全放开结构。三者都没有改变这一结果。</p>
+    <p>有经验确实略好，但这个优势在第 2 个游戏和第 6 个游戏上一样大，并不累积。同类游戏的经验没有带来额外好处：之前只玩过同类游戏的 agent，学习期平均比从零开始低 0.08（固定结构，9 个游戏中 2 个为正）和 0.12（自定结构，5 个中 2 个为正），第 1 局也更低（−0.09）。我们还试了三种只改机制、不规定内容的办法：让 agent 在新游戏第 1 局同时运行"继承版"和"从零版"技能并看到两者的分数；对记忆总量设上限迫使它取舍；以及完全放开结构。三者都没有改变这一结果。</p>
 
     <h3><span class="num">4.4</span>原因之一：它跨游戏记住的几乎都是工程经验</h3>
     <p>图 4(a) 给出了直接原因。66 条跨游戏要点中，约 40 条是调试和工程方法，约 21 条是图像处理工具，只有 5 条是游戏规律。下面是一个 agent 跨游戏笔记中的三条（原文为英文，此处为译文）：</p>
@@ -322,15 +325,14 @@ if dist &lt;= thr:
   </figure>
   <figure>
     <div class="frame"><img src="figs/f4_ladder.png" alt="左：从同一游戏到不同游戏六个级别上有经验减从零开始的差；右：同一游戏和换皮两种条件下的学习曲线"></div>
-    <figcaption><b>图 7　经验的有效半径。</b>(a) 有经验 agent 减去从零开始 agent 的完成度。左四组来自阶梯实验（每组 6 对），右两组来自 4.3 的跨游戏实验。(b) 代码记忆 agent 在"同一游戏"和"换皮"两级的学习曲线，各为 6 对的平均。</figcaption>
+    <figcaption><b>图 7　经验的有效半径。</b>(a) 有经验 agent 减去从零开始 agent 的完成度，分别看第 1 局和学习期平均。左四组来自阶梯实验（每组 6 到 12 对），右两组来自 4.3 的跨游戏实验。(b) 代码记忆 agent 在"同一游戏"和"换皮"两级的学习曲线，各为 6 对的平均。</figcaption>
   </figure>
   <div class="col">
-    <p>阶梯给出了一个清晰的分界。在画面不变的三级里，经验让第 1 局平均高 0.01 到 0.13、6 局平均高 0.10 到 0.17，但 6 局之后从零开始的 agent 追了上来，在隐藏种子上有经验的一方不再领先。经验的价值是"起步快几局"，而不是"上限更高"。成绩簿揭示了一个副作用：有经验的 agent 在 108 局里有 81 局切回了"已验证的冠军版本"，从零开始的只有 18 局；经验让它少探索。</p>
-    <p>画面一变，经验就从有利变为有害：换皮后有经验 agent 的第 1 局只有 0.18，从零开始的是 0.45，6 对中 5 对为负。它的改版理由（译文）写得很清楚，先是"切回冠军版本 v2"，然后是"灰度低于 118 的掩码选中了黑色背景，从不起跳"，到第 3 局才改出能适应两种明暗的掩码。它存下的感知代码和"哪个版本是冠军"的记录，在换皮后同时失效。</p>
+    <p>阶梯给出了一个清晰的分界。在画面不变的三级里，经验让第 1 局平均高 0.01 到 0.13、学习期平均高 0.13 到 0.17。画面一变，经验就从有利变为有害：换皮后有经验 agent 的第 1 局只有 0.18，从零开始的是 0.45，6 对中 5 对为负；学习期平均也低 0.11，同样 6 对中 5 对为负。它的改版理由（译文）写得很清楚：先是"切回冠军版本 v2"，然后是"灰度低于 118 的掩码选中了黑色背景，从不起跳"，到第 3 局才改出能适应两种明暗的掩码。它存下的感知代码和"哪个版本是冠军"的记录，在换皮后同时失效。成绩簿还揭示了一个副作用：有经验的 agent 在 108 局里有 81 局切回了"已验证的冠军版本"，从零开始的只有 18 局，经验让它少探索。</p>
     <p>唯一扛住变化的是决策类经验。Wolf3D 中敌人血量变为 3 倍后，有经验 agent 的第 1 局仍高出 0.42，因为它记下的是地图、门和清敌路线，规则变了这些仍然有效。另一个现象值得注意：Dino 的规则改为"只有蹲着才得分"后，12 个 agent、72 局中没有一局系统地尝试过蹲下。这个 agent 不会主动探索去发现规则的变化。</p>
     <p>把阶梯与 4.3 放在同一张图上（图 7a），经验的价值随差异增大而下降，在"画面改变"这一步就跌到零以下。另一个同类游戏的画面当然也不同，这解释了 4.3 中同类经验为什么没有用。</p>
 
-    <h3><span class="num">4.6</span>连续学习一条游戏链：不越学越快，还会遗忘</h3>
+    <h3><span class="num">4.6</span>在更干净的条件下重测：仍然没有迁移</h3>
     <p>前五条结果各自测量一个侧面。为了把"终身学习"作为一个整体来看，我们借用持续学习领域的标准做法（<a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">Lopez-Paz &amp; Ranzato, 2017</a>）：agent 依次学一条游戏链，每学完一关，就在一份冻结的副本上把整条链的每一关都测一遍，得到一张性能矩阵。我们为每一关加上"学会它花了多少局"作为成本。</p>
   </div>
   <div class="col tablewrap">
@@ -345,27 +347,23 @@ if dist &lt;= thr:
     </table>
   </div>
   <div class="col">
-    <p>上表是一个理想终身学习者应有的样子（数字为示意）：对角线（深色）是学会的水平；右上（浅蓝）是还没学的游戏因为学过前面的而提前变好，即<strong>前向迁移</strong>；左下（浅红）是学过的游戏后来是否掉分，即<strong>遗忘</strong>；最后一列的成本应当递减。我们以 0.8 为"学会"的门槛，每关最多学 8 局，每格在隐藏种子上测 2 局，运行了两条链，各两次：链 A 为三个一键时机游戏接一个第一人称射击（Dino → Geodash → Stack → Wolf3D），链 B 为类型交替的 Snake → Wolf3D → Dino → Stack。</p>
+    <p>上表是一个理想终身学习者应有的样子（数字为示意）：对角线（深色）是学会的水平；右上（浅蓝）是还没学的游戏因为学过前面的而提前变好，即<strong>前向迁移</strong>；左下（浅红）是学过的游戏后来是否掉分，即<strong>遗忘</strong>；最后一列的成本应当递减。</p>
+    <p><strong>策略游戏链。</strong>我们选了 5 个不考反应力的游戏：2048、Tetris、扫雷、Pac-Man、Minecraft。其中 3 个的原始目标太低（2048 的原目标随机按键就能达到），我们把目标调高（2048 总分 4000、Tetris 1500 分、扫雷正确插旗 10 个），使随机按键只有 0.2 到 0.5。每关最多学 8 局，连续两局达到 0.8 算学会；每格在隐藏种子上测 3 局；运行两次。</p>
   </div>
   <figure>
-    <div class="frame"><img src="figs/f5_chain.png" alt="四个 5 行 4 列的性能矩阵热图"></div>
-    <figcaption><b>图 8　链式性能矩阵。</b>每行为学完前几关之后、在整条链上的完成度（隐藏种子）；粗框为刚学会的那一关；行标签注明学会这一关用了几局（"&gt;8"表示 8 局内未达到门槛）。</figcaption>
+    <div class="frame"><img src="figs/f5_chain.png" alt="两张 6 行 5 列的性能矩阵热图"></div>
+    <figcaption><b>图 8　策略游戏链的性能矩阵。</b>每行为学完前几关之后、在整条链上的完成度（隐藏种子）；粗框为刚学会的那一关；行标签注明学会这一关用了几局（"&gt;8"表示 8 局内未达到）。</figcaption>
   </figure>
-  <div class="col tablewrap">
-    <table>
-      <thead><tr><th>指标</th><th>实测（4 次运行）</th><th>理想的终身学习者</th></tr></thead>
-      <tbody>
-        <tr><td>学会的水平（对角线，隐藏种子）</td><td class="n">0.70</td><td>接近 1</td></tr>
-        <tr><td>前向迁移</td><td class="n">−0.06</td><td>为正，并随链增长</td></tr>
-        <tr><td>学会成本，按链上位置 1 → 4（局）</td><td class="n">2.8 → 3.5 → 3.8 → 4.3</td><td>递减</td></tr>
-        <tr><td>已学游戏在学完全链后的变化</td><td class="n">−0.10</td><td>约为 0</td></tr>
-      </tbody>
-    </table>
-  </div>
   <div class="col">
-    <p>矩阵印证了前面的结论，并补上了一块此前看不到的内容。每个游戏能学到"还行"：学习中某一局达到 0.8 后，在隐藏种子上平均只有 0.70，一次达标不等于学会。前向迁移在零附近，学会成本没有随位置下降（未达标按 9 局计；位置与游戏难度在 4 次运行中无法分开）。</p>
-    <p>新的发现是遗忘，而且机制很具体。Snake 的技能里写着 <code>import vision</code>，当时共享代码库里没有这个模块，技能无法启动，于是由模型看图来玩，成绩 1.00。后来学 Dino 时，agent 为 Dino 新写了一个同名模块 <code>vision.py</code>。Snake 的旧技能从此导入成功并接管了游戏，每局死亡 12 次，成绩跌到 0.33。Snake 的技能一个字没改，是另一个游戏写进共享库的代码把它带坏了。这与 4.4 中"继承的感知代码拖累新游戏"是同一个机制在时间另一侧的表现：共享的是感知代码，而感知代码在游戏之间并不通用。</p>
-    <p>需要说明的是，同一份代码在同一组种子上，单局完成度也可在 0.56 到 1.00 之间波动（来自游戏计时的不确定性）。每格只测 2 局时，小于约 0.15 的前向迁移和遗忘与噪声不可区分；上述 Snake 的遗忘是确定性的，其余数字应视为方向。</p>
+    <p>2048 和 Tetris 学会了（0.84 到 1.0）；扫雷停在 0.3 到 0.4，与随机按键相当；Pac-Man 没学会；Minecraft 全程为 0。能学会的仍是能写成固定规则程序的游戏，需要逐步推理、规划路线或 3D 探索的都没有学会。前向迁移两次分别为 −0.09 和 +0.09。已学游戏在学完全链后没有出现确定性的掉分：同一个程序版本在同一组种子上，单局成绩本身就在 0.38 到 1.0 之间波动，观察到的变化都在这个范围内。</p>
+    <p><strong>宝可梦跨世代。</strong>小游戏里可共享的东西太少，又要先解决画面识别。为了在对迁移最友好的条件下再测一次，我们换到宝可梦对战（开源对战模拟器 Pokémon Showdown）：不同世代的宝可梦池和机制不同，但"属性克制、何时换人、判断对手"这一套策略是共享的；状态以文字给出，没有画面识别的负担；一局只需几秒到一分钟、约 $0.003，可以打几百局把胜率测准。agent 每回合读状态和笔记选一个动作；每代打 5 轮、每轮 10 局，每轮后反思改写本代笔记。终身组的笔记一路带下去，每学完一代还会把各代笔记并列、总结出跨世代的全局笔记。对手固定为内置最强的启发式 bot，学前、学后各测 100 局，两组各运行两次。</p>
+  </div>
+  <figure class="narrow">
+    <div class="frame"><img src="figs/f6_pokemon.png" alt="宝可梦三个世代上，两组在学前和学后的胜率柱状图"></div>
+    <figcaption><b>图 9　宝可梦跨世代。</b>每格为两次运行的平均，每次 100 局；误差线为标准误。</figcaption>
+  </figure>
+  <div class="col">
+    <p>结果在同一世代内就没有学起来：从零组平均胜率学前 0.44、学后 0.49，终身组 0.43、学后 0.41，都在噪声附近。新世代学之前，终身组相对从零组也没有优势（第 4 代 0.48 对 0.46，第 9 代 0.38 对 0.42）。笔记的内容是对的，但都是模型本来就知道的常识，例如"先看双方血量、速度和属性，判断谁能击倒谁；处于劣势就换到有抗性的队友"。写成笔记没有增加信息，所以没有改变决策。终身组自己也在全局笔记里写道："这里的练习让第 1、4 代变差、第 9 代没提升，旧经验只当弱假设。"</p>
   </div>
 </section>
 
@@ -377,72 +375,87 @@ if dist &lt;= thr:
       <tbody>
         <tr><td>凭反馈在一个游戏里越玩越好</td><td><span class="yes">能</span>，前提是经验写成代码</td><td>4.1</td></tr>
         <tr><td>自己组织记忆</td><td><span class="yes">能</span>，限于单游戏内的工程闭环</td><td>4.2</td></tr>
-        <tr><td>把一个游戏学到稳定的高水平</td><td>部分：学到约 0.70，表现不稳定</td><td>4.6</td></tr>
-        <tr><td>把经验带到下一个游戏</td><td>常数级收益，不累积</td><td>4.3</td></tr>
-        <tr><td>记住与画面无关的游戏规律</td><td><span class="no">否</span>，规律只留在笔记里</td><td>4.4</td></tr>
-        <tr><td>经验在环境变化后仍然有效</td><td>仅限画面不变；决策类经验例外</td><td>4.5</td></tr>
+        <tr><td>把一个游戏学到高水平</td><td>部分：能写成固定规则的游戏可以（2048、Tetris），需要推理、规划或 3D 探索的不行</td><td>4.6</td></tr>
+        <tr><td>把经验带到下一个游戏</td><td>常数级收益，不累积；更干净的条件下（宝可梦）为零</td><td>4.3、4.6</td></tr>
+        <tr><td>记住与画面无关的游戏规律</td><td><span class="no">否</span>，规律只留在笔记里，或只是常识</td><td>4.4、4.6</td></tr>
+        <tr><td>经验在环境变化后仍然有效</td><td>仅限画面不变；决策类经验是例外</td><td>4.5</td></tr>
         <tr><td>主动探索以发现规则变化</td><td><span class="no">否</span></td><td>4.5</td></tr>
         <tr><td>越学越快</td><td><span class="no">否</span></td><td>4.3、4.6</td></tr>
-        <tr><td>学新游戏不忘旧游戏</td><td><span class="no">否</span>，共享代码造成遗忘</td><td>4.6</td></tr>
+        <tr><td>学新游戏不忘旧游戏</td><td>修复实验框架后，未见超出测量噪声的遗忘</td><td>4.6</td></tr>
       </tbody>
     </table>
   </div>
-  <p>三条标准中，前两条已经可以做到，第三条断在一个明确的位置。agent 的经验以"感知代码加成绩记录"的形式存在，两者都以像素为坐标。这一点解释了全部负面结果：同类游戏迁移为负，因为继承的感知代码首先要被修掉；收益不随经历增长，因为工程经验一两个游戏后就饱和；换皮即失效；学新游戏时改写共享感知代码，又会把旧游戏带坏。</p>
-  <p class="takeaway">我们离终身游戏 agent 的距离，不在于它学不会，而在于它学会的东西只在它看到的像素里有效。</p>
-  <p>缺口的形状因此也清楚了：缺的是一层<strong>与画面无关的表示</strong>（物体、相对位置、速度，以及建立在它们之上的规律），以及在这层表示上做抽象的倾向。Dino 技能里的 <code>thr = 2.2 * spd</code> 和笔记里那条"停留步数等于宽度除以速度"说明，模型能写出这样的规律；Wolf3D 的例外说明，这类知识一旦以与画面无关的形式存在，就能跨过规则变化。问题在于它从未把规律从感知代码中分离出来、单独保存和复用。</p>
-  <p><strong>与已有工作的关系。</strong>近期在 12 个虚幻引擎游戏上的 <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">OmniGameArena</a> 发现，反思学到的技能在原版上的提升不能预测它在留出变体上的表现；其中一个游戏上原版提升最大（+201%）的模型，在全部三个变体上都是负迁移，与我们的换皮结果一致。在规则陌生的文字游戏上，<a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">Learn2Play Bench</a> 发现保留完整的行动与反馈记录比把经验总结成规则更有效，并且人类玩家比 agent 尝试更多样的策略、更少重复动作，与我们观察到的"守着冠军版本、不探索"相呼应。在文本环境中，有跨环境迁移证据的记忆机制主要是从成功与失败轨迹中对比蒸馏出子任务级经验（<a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">ExpeL</a>、<a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">ReasoningBank</a>），以及以下游任务回报训练的记忆整理器（<a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">Auto-Dreamer</a>）；以提示词驱动的离线"睡眠整理"目前没有任务迁移的证据。让 agent 改写自身学习流程的工作（如 <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">Hyperagents</a>）显示，学到的学习流程可以加快新领域的起步，但证据仍然有限。据我们所知，尚无工作在像素输入下、以从零开始的对照测量过不同游戏之间的技能迁移。</p>
-  <p><strong>下一步。</strong>链式性能矩阵本身可以作为比较不同 agent 设计的统一尺子：对角线衡量学习能力，右上衡量泛化，左下衡量遗忘，成本列衡量是否越学越快。在把尺子做准（每格更多测量、记录共享代码的版本、以连续达标定义"学会"）之后，可以依次检验三类不规定内容的机制：修改共享代码前先在已学游戏上做回归测试（针对遗忘）；定期把所有游戏的技能和曲线并列，要求 agent 寻找共性（针对迁移）；最后以矩阵指标为目标，让 agent 自己改进自己的学习流程。另外两个变量同样需要检验：更强的基座模型是否会自发分离规律与感知，以及共享结构更深、并会反复出现变体的游戏流，是否能为抽象提供足够的回报。</p>
+  <p>三条标准中，前两条已经可以做到，第三条断在一个明确的位置：<strong>agent 存下的经验要么太具体，要么太空泛，缺了中间那一层。</strong>太具体的是与像素绑定的感知代码（"灰度低于 118 的是物体"），换个画面就失效；太空泛的是模型本来就知道的常识（宝可梦笔记），存了也不增加信息；能带走的工程方法（"一次只改一处"）一两个游戏后就攒齐了。缺失的中间层是<strong>游戏规则和机制</strong>："碰到尖刺会死""起跳提前量与速度成正比""水系克火系"。这一层既不平凡，又能跨游戏复用，却几乎从未被单独存下来。另一个原因是学习信号嘈杂：只看每局的结局分数，而同一份代码的单局成绩就能在 0.38 到 1.0 之间波动，agent 很难判断一次修改到底有没有用。</p>
+  <p class="takeaway">我们离终身游戏 agent 的距离，不在于它学不会，而在于它学会的东西要么只在它见过的像素里有效，要么是它本来就知道的。</p>
+  <p><strong>与已有工作的关系。</strong>人类学游戏也依赖先验：把一个游戏的物体语义和视觉一致性去掉，人类通关时间会从约 2 分钟增加到 20 多分钟（<a href="https://arxiv.org/abs/1802.10217" target="_blank" rel="noopener">Dubey 等, 2018</a>），这与我们的换皮结果是同一个现象。近期在 12 个虚幻引擎游戏上的 <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">OmniGameArena</a> 发现，反思学到的技能在原版上的提升不能预测它在留出变体上的表现；其中一个游戏上原版提升最大（+201%）的模型，在全部三个变体上都是负迁移。在规则陌生的文字游戏上，<a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">Learn2Play Bench</a> 发现保留完整的行动与反馈记录比把经验总结成规则更有效，并且人类比 agent 尝试更多样的策略、更少重复动作，与我们观察到的"守着冠军版本、不探索"相呼应。在文本环境中，有跨环境迁移证据的记忆机制主要是从成功与失败轨迹中对比蒸馏出子任务级经验（<a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">ExpeL</a>、<a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">ReasoningBank</a>），以及以下游任务回报训练的记忆整理器（<a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">Auto-Dreamer</a>）。</p>
+  <p><strong>下一步：把"规则"作为积累的单位。</strong>人类学游戏快，主要靠建立关于规则的模型（什么碰了会死、东西怎么动），再用它推演，而不是记下该怎么操作。已有工作显示这条路可行：基于理论的 agent 把每个游戏的规则学成小程序、主动设计试探去验证、再用规则规划，在简单网格游戏上接近人类的学习效率（<a href="https://arxiv.org/abs/2107.12544" target="_blank" rel="noopener">Tsividis 等, 2021</a>）；<a href="https://arxiv.org/abs/2402.12275" target="_blank" rel="noopener">WorldCoder</a> 让大模型把环境规则写成可执行的世界模型，比直接学策略省得多，并能通过修改代码在环境之间迁移；面向"在规则全新的游戏里多快学会"的 <a href="https://arxiv.org/abs/2603.24621" target="_blank" rel="noopener">ARC-AGI-3</a> 上，也有工作用可执行世界模型取得进展（<a href="https://arxiv.org/abs/2605.05138" target="_blank" rel="noopener">2026</a>）。据此我们提出一个可证伪的假设：<strong>如果 agent 每一步先预测下一状态、把规则写成可运行的模型、主动设计试探来验证猜想、用规则模型规划，并把验证过的机制存进跨游戏的机制库，那么后面的游戏需要新学的规则会越来越少，学习成本随之下降。</strong>这同时针对两个问题：预测误差每一步都有确定的对错，比结局分数密集得多；规则正是缺失的中间层。如果这样做之后后面的游戏仍然没有变便宜，问题就在更深处，例如模型的归纳能力，或者需要把经验训练进权重。我们只设计这些学习机制，不告诉 agent 任何具体规则。</p>
 </section>
 
 <section class="col" id="limits">
   <h2><span class="num">6</span>局限</h2>
   <ul class="plain">
-    <li><strong>样本量小。</strong>多数条件每格只有 1 到 2 个 agent，同条件下两个 agent 的成绩可相差一倍。各结论的方向在 5 到 9 个游戏或多数配对上一致，单个数值的可信范围约为 ±0.15 到 ±0.3。</li>
-    <li><strong>只有一个模型。</strong>更强的模型是否会自发抽象游戏规律，是本报告最直接的未检验变量。</li>
-    <li><strong>经历很短。</strong>每个游戏 6 到 10 局，最多连续 6 个游戏；多个任务在 1.0 处封顶，压缩了差异。</li>
-    <li><strong>游戏范围。</strong>仅限可暂停的 2D 和简单 3D 浏览器游戏；实时、多人、长时程的策略游戏不在本报告范围内。</li>
-    <li><strong>个别实验无信息或证据单薄。</strong>Dino 的"只有蹲下才得分"一级两边全为 0；"决策类经验耐变化"只在 Wolf3D 一个游戏上观察到；链式实验只有两条链、各两次运行，且链上位置与游戏难度混杂。</li>
+    <li><strong>样本量。</strong>小游戏实验多数条件每格只有 1 到 2 个 agent，同条件下两个 agent 的成绩可相差一倍，单局成绩本身也有明显波动。各结论的方向在 5 到 9 个游戏或多数配对上一致，单个数值的可信范围约为 ±0.15。宝可梦每格 2×100 局，标准误约 0.035。</li>
+    <li><strong>只有一个模型。</strong>更强的模型是否会自发抽象游戏规则，是本报告最直接的未检验变量。</li>
+    <li><strong>经历很短。</strong>每个游戏 6 到 10 局，最多连续 6 个游戏。这个量级只够"适应"，不够"精通"。</li>
+    <li><strong>宝可梦只测了文字笔记。</strong>代码载体（例如伤害计算加前瞻搜索的程序）在宝可梦上尚未测试。</li>
+    <li><strong>固定结构 agent 的笔记会被截断。</strong>单游戏笔记有约 70%、跨游戏笔记约 38% 在最后一次写入时超出字数上限被截掉结尾，被截掉的多是"还没确定的事、下一步打算"一类内容。因此"没有出现假设列表"只对不截断的自定结构 agent 成立。宝可梦实验不再静默截断。</li>
+    <li><strong>游戏范围。</strong>仅限可暂停的浏览器游戏和回合制对战；实时、多人、长时程的商业游戏不在本报告范围内。</li>
   </ul>
 </section>
 
 <section class="col" id="appendix">
   <h2><span class="num">A</span>附录</h2>
-  <h3>实验规模与成本</h3>
+  <h3>A.1 实验规模与成本</h3>
   <div class="tablewrap">
     <table>
       <thead><tr><th>项目</th><th>数值</th></tr></thead>
       <tbody>
-        <tr><td>总局数 / 环境步数</td><td class="n">4 743 局 / 约 116 万步</td></tr>
-        <tr><td>API 总花费（按高峰价计，为上限）</td><td class="n">$313</td></tr>
-        <tr><td>一局，由模型逐步决策</td><td class="n">$0.05–0.25，8–15 分钟</td></tr>
-        <tr><td>一局，由技能程序接管</td><td class="n">$0.01–0.03，2–3 分钟</td></tr>
-        <tr><td>相似度阶梯（87 个 agent）</td><td class="n">$67</td></tr>
-        <tr><td>链式实验（4 次运行）</td><td class="n">$17</td></tr>
+        <tr><td>浏览器游戏：总局数</td><td class="n">约 5 000 局，约 120 万环境步</td></tr>
+        <tr><td>宝可梦对战：总局数</td><td class="n">3 400 局</td></tr>
+        <tr><td>API 总花费（按高峰价计，为上限）</td><td class="n">约 $345</td></tr>
+        <tr><td>一局浏览器游戏，模型逐步决策</td><td class="n">$0.05–0.25，8–15 分钟</td></tr>
+        <tr><td>一局浏览器游戏，技能程序接管</td><td class="n">$0.01–0.03，2–3 分钟</td></tr>
+        <tr><td>一局宝可梦对战</td><td class="n">约 $0.003</td></tr>
       </tbody>
     </table>
   </div>
-  <h3>实现细节</h3>
+  <h3>A.2 实现细节</h3>
   <ul class="plain">
-    <li>每步决策关闭模型的思考模式（约 1.2 秒一步）；局后反思开启中等强度的思考，输出预算 4.8 万 token，若思考耗尽预算导致空回复则降低强度重试。</li>
+    <li>每步决策关闭模型的思考模式（约 1.2 秒一步）；局后反思开启中等强度的思考，若思考耗尽输出预算导致空回复则降低强度重试。</li>
     <li>技能程序在独立子进程中运行，每帧时限 2 秒；出错或超时时本步交给模型。</li>
-    <li>笔记超出上限时截断；共享代码库不设上限（另有一组实验将全部记忆限制在 8000 字以内，见 4.3）。</li>
-    <li>操作手感变化在按键执行层实现；改规则通过对游戏源码打补丁生成独立副本；换皮在截图上做颜色变换，不影响游戏逻辑。</li>
-    <li>链式实验中，学习在某一局达到门槛或第 8 局后停止，且该局之后不再反思，以保证被测量的就是实际取得成绩的版本。</li>
+    <li>操作手感变化在按键执行层实现；改规则通过对游戏源码打补丁生成本地副本；换皮在截图上做颜色变换，不影响游戏逻辑。</li>
+    <li>链式实验：学习在连续两局达标或第 8 局后停止，最后一局之后不再反思；每学完一个游戏，把共享代码库冻结一份给这个游戏的技能使用。</li>
+    <li>宝可梦：每回合一次模型调用；笔记超出上限时先让模型自己压缩，压缩后仍超出才截断并记录。</li>
   </ul>
+  <h3>A.3 GameWorld 环境修补</h3>
+  <p>GameWorld 的 165 个任务中有 31 个所引用的评分字段游戏从不输出，任何策略都得 0 分；我们将这些字段映射到游戏实际输出的等价字段，并在每次运行中记录修补内容。</p>
+  <h3 id="errata">A.4 修订说明（2026-10-20）</h3>
+  <p>在后续实验中，我们发现了三处实验框架的缺陷，并据此修订了本文：</p>
+  <ol class="plain">
+    <li><strong>撤回"学新游戏会弄坏旧游戏"。</strong>上一版报告了一例遗忘：学 Dino 时写进共享代码库的模块，让 Snake 的旧技能成绩从 1.00 掉到 0.33。原因是不同游戏的模块同名，属于我们实验框架的缺陷，不是 agent 的性质。修复后（每个游戏学完时冻结一份共享代码库），没有再出现超出测量噪声的遗忘。</li>
+    <li><strong>改用不受影响的读数。</strong>早期实验在最后一局学习之后仍让 agent 反思一次，再在隐藏种子上测"最终成绩"，测到的可能是一个从未试玩过的新版本。本版的图 3、图 5(b)、图 7 改用学习期间实际玩过的版本的成绩和第 1 局成绩。结论方向不变，部分数值改变：例如代码记忆的单游戏成绩从 0.53 / 0.61 改为 0.48 / 0.56；"先玩同类游戏"相对从零开始从 −0.12 改为 −0.08；Wolf3D 文字笔记的效果从 0.83 改为 0.53（无记忆为 0.43）。</li>
+    <li><strong>链式实验重跑。</strong>上一版的链式矩阵来自修复前的实验，本版换成修复后重跑的策略游戏链（图 8），并新增宝可梦跨世代实验（图 9）。</li>
+    <li><strong>"没有假设列表"的适用范围。</strong>固定结构 agent 的笔记会被截断，被截掉的结尾里常有待验证的猜想，因此这一观察只对不截断的自定结构 agent 成立。</li>
+  </ol>
   <h3>参考文献</h3>
   <ol class="refs">
-    <li>GameWorld. <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">arXiv:2604.07429</a></li>
+    <li>Ouyang et al. GameWorld: Towards Standardized and Verifiable Evaluation of Multimodal Game Agents. <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">arXiv:2604.07429</a></li>
     <li>Wang et al. Voyager: An Open-Ended Embodied Agent with Large Language Models. <a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">arXiv:2305.16291</a></li>
-    <li>Tan et al. Cradle: Towards General Computer Control. <a href="https://arxiv.org/abs/2403.03186" target="_blank" rel="noopener">arXiv:2403.03186</a></li>
+    <li>Tan et al. Cradle: Empowering Foundation Agents Towards General Computer Control. <a href="https://arxiv.org/abs/2403.03186" target="_blank" rel="noopener">arXiv:2403.03186</a></li>
     <li>Lopez-Paz &amp; Ranzato. Gradient Episodic Memory for Continual Learning. <a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">arXiv:1706.08840</a></li>
+    <li>Dubey et al. Investigating Human Priors for Playing Video Games. ICML 2018. <a href="https://arxiv.org/abs/1802.10217" target="_blank" rel="noopener">arXiv:1802.10217</a></li>
+    <li>Tsividis et al. Human-Level Reinforcement Learning through Theory-Based Modeling, Exploration, and Planning. <a href="https://arxiv.org/abs/2107.12544" target="_blank" rel="noopener">arXiv:2107.12544</a></li>
+    <li>Tang, Key &amp; Ellis. WorldCoder, a Model-Based LLM Agent: Building World Models by Writing Code and Interacting with the Environment. NeurIPS 2024. <a href="https://arxiv.org/abs/2402.12275" target="_blank" rel="noopener">arXiv:2402.12275</a></li>
+    <li>ARC Prize Foundation. ARC-AGI-3. <a href="https://arxiv.org/abs/2603.24621" target="_blank" rel="noopener">arXiv:2603.24621</a></li>
+    <li>Executable World Models for ARC-AGI-3 in the Era of Coding Agents. <a href="https://arxiv.org/abs/2605.05138" target="_blank" rel="noopener">arXiv:2605.05138</a></li>
     <li>Zhao et al. ExpeL: LLM Agents Are Experiential Learners. <a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">arXiv:2308.10144</a></li>
-    <li>ReasoningBank. <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">arXiv:2509.25140</a></li>
-    <li>Auto-Dreamer. <a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">arXiv:2605.20616</a></li>
-    <li>Hyperagents. <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">arXiv:2603.19461</a></li>
-    <li>OmniGameArena. <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">arXiv:2606.09826</a></li>
-    <li>Learn2Play Bench. <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">arXiv:2610.08215</a></li>
+    <li>Ouyang et al. ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory. <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">arXiv:2509.25140</a></li>
+    <li>Ye et al. Auto-Dreamer: Learning Offline Memory Consolidation for Language Agents. <a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">arXiv:2605.20616</a></li>
+    <li>Lin et al. OmniGameArena: A Unified UE5 Benchmark for VLM Game Agents with Improvement Dynamics. <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">arXiv:2606.09826</a></li>
+    <li>Li et al. Learn2Play Bench: How Well Do LLM Agents Learn from Experience in Unfamiliar Environments? <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">arXiv:2610.08215</a></li>
+    <li>Pokémon Showdown（开源对战模拟器）<a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">github.com/smogon/pokemon-showdown</a>；poke-env <a href="https://github.com/hsahovic/poke-env" target="_blank" rel="noopener">github.com/hsahovic/poke-env</a></li>
   </ol>
-  <p class="foot">游戏截图取自 GameWorld 收录的第三方网页游戏，版权归各自所有者，仅用于研究说明。改规则所用的游戏副本由补丁脚本在本地生成，不随代码分发。</p>
+  <p class="foot">游戏截图取自 GameWorld 收录的第三方网页游戏，版权归各自所有者，仅用于研究说明。改规则所用的游戏副本由补丁脚本在本地生成，不随代码分发。宝可梦为任天堂、Creatures、Game Freak 的商标，本文仅使用开源对战模拟器做研究。</p>
 </section>
 </main>
 </body>

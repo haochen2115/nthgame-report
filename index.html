@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="A self-programming agent on ten browser games: it learns each game, but what it learns stays anchored to the pixels it has seen.">
+<meta name="description" content="A self-programming agent on browser games and Pokémon battles: it improves within a game, but what it learns is tied to pixels or is common knowledge, so it does not transfer.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="How far are we from a lifelong game agent?">
-<meta property="og:description" content="A self-programming agent on ten browser games: it learns each game, but what it learns stays anchored to the pixels it has seen.">
+<meta property="og:description" content="A self-programming agent on browser games and Pokémon battles: it improves within a game, but what it learns is tied to pixels or is common knowledge, so it does not transfer.">
 <meta property="og:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="How far are we from a lifelong game agent?">
-<meta name="twitter:description" content="A self-programming agent on ten browser games: it learns each game, but what it learns stays anchored to the pixels it has seen.">
+<meta name="twitter:description" content="A self-programming agent on browser games and Pokémon battles: it improves within a game, but what it learns is tied to pixels or is common knowledge, so it does not transfer.">
 <meta name="twitter:image" content="https://haochen2115.github.io/nthgame-report/figs/social_card.png">
 <title>How far are we from a lifelong game agent?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,6 +122,7 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 .toc a:hover { color: var(--accent); }
 .refs { font-size: 0.85rem; line-height: 1.7; color: var(--muted); padding-left: 1.2rem; }
 .refs li { margin-bottom: 0.4rem; }
+.revnote { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 0.6rem; margin-top: 0.4rem; }
 .foot { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2rem; }
 .lang a { color: var(--muted); }
 .takeaway { font-family: var(--serif); font-size: 1.2rem; line-height: 1.7; font-weight: 600; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 1.2rem 0; margin: 2rem 0; text-wrap: balance; }
@@ -139,13 +140,14 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 <header class="top col">
   <div class="eyebrow">NthGame technical report · October 2026<span class="lang"> · <a href="zh.html" data-lang="zh">中文</a></span></div>
   <h1>How far are we from a lifelong game agent?</h1>
-  <p class="subtitle">Evidence from a self-programming agent on ten browser games</p>
+  <p class="subtitle">Evidence from a self-programming agent on browser games and Pokémon battles</p>
   <p class="byline">Hao Chen · <span class="email">haochen2115@gmail.com</span></p>
   <div class="meta">
     <span>Model: DeepSeek V4.1 Flash (screenshots only)</span>
-    <span>Environment: GameWorld browser games</span>
-    <span>4,743 attempts · 1.16M environment steps</span>
-    <span>API cost $313 · no GPU</span>
+    <span>Environments: GameWorld browser games, Pokémon Showdown</span>
+    <span>~5,000 browser-game attempts + 3,400 Pokémon battles</span>
+    <span>API cost ~$345 · no GPU</span>
+    <span>Revised 2026-10-20</span>
   </div>
   <nav class="toc" aria-label="Contents">
     <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#setup">2 Environment</a><a href="#agent">3 Agent</a><a href="#results">4 Results</a><a href="#discussion">5 Discussion</a><a href="#limits">6 Limitations</a><a href="#appendix">Appendix</a>
@@ -156,8 +158,9 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
   <div class="abstract">
     <h2>Abstract</h2>
     <p>A lifelong game agent should learn any new game from feedback alone, and should learn each new game faster than the last. We test how far current models are from this goal with an agent that never updates its weights. It keeps a persistent workspace in which it writes its own skill programs, notes and scoreboards. Every game receives the same prompts, with no per-game human engineering.</p>
-    <p>Across ten browser games and roughly 4,700 attempts we find the following. The agent learns within a single game, but only when it writes its experience as executable code. Given no memory structure at all, it invents the structures that within-game learning needs. What it learns, however, barely travels. The benefit of prior games is a constant that does not grow with experience, and experience from games of the same genre gives no extra benefit. A ladder of increasingly large changes shows that experience helps only while the screen looks the same: inverting the colours of an otherwise identical game turns experience from an asset into a liability. When the agent learns a chain of games in sequence, it neither learns faster over time nor keeps what it learned, because new code written for one game breaks the skills of another.</p>
-    <p>Within-game self-improvement and self-organised memory are within reach today. The main gap on the way to a lifelong game agent is that the agent's experience is anchored to pixels: it lacks a representation that is independent of what the screen looks like.</p>
+    <p>Across ten browser games (about 5,000 attempts) and Pokémon battles (3,400 battles) we find the following. The agent improves within a single game, but only when it writes its experience as executable code; text notes are indistinguishable from no memory. Given no memory structure at all, it invents the structures that within-game learning needs. What it learns, however, does not travel. The benefit of prior games is a constant that does not grow with experience, experience from games of the same genre gives no extra benefit, and in Pokémon, consolidating notes across generations brings no transfer either. A ladder of increasingly large changes shows that experience helps only while the screen looks the same: inverting the colours of an otherwise identical game turns experience from an asset into a liability.</p>
+    <p>Within-game self-improvement and self-organised memory are within reach today. But what the agent stores is either anchored to pixels or a restatement of what the model already knows; the layer of game rules in between is missing, and this is the main reason transfer fails. We close with a falsifiable next hypothesis: have the agent build and verify models of the rules, and make rules the unit that accumulates across games.</p>
+    <p class="revnote">This is a revised version (2026-10-20). See <a href="#errata">Appendix A.4</a>: one conclusion that came from a flaw in our experimental harness has been withdrawn, and affected readings have been replaced with unaffected ones.</p>
   </div>
 </section>
 
@@ -174,7 +177,7 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
   <ol class="claims">
     <li>An evaluation protocol with zero per-game engineering: single-game learning, cross-game sequences, a similarity ladder, and a continual-learning performance matrix, each paired with a from-scratch control.</li>
     <li>Six empirical findings covering the three capabilities, each backed by mechanistic evidence from the code and notes the agent wrote.</li>
-    <li>A diagnosis of the gap: experience stops helping as soon as the screen changes, because the agent stores it in pixel coordinates.</li>
+    <li>A diagnosis of the gap: stored experience is either tied to pixels or common knowledge, and the layer of game rules is missing; and a falsifiable next hypothesis.</li>
   </ol>
 </section>
 
@@ -259,17 +262,17 @@ blockquote { margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px s
 <section id="results">
   <div class="col">
     <h2><span class="num">4</span>Results</h2>
-    <p>We report six findings in the order of the three capabilities. The first two concern improving within a game and organising memory; the last four concern carrying experience forward.</p>
+    <p>We report six findings in the order of the three capabilities. The first two concern improving within a game and organising memory; the last four concern carrying experience forward. All numbers use only readings that are unaffected by the known harness flaws (Appendix A.4): the scores of versions actually played during learning, first-attempt scores, and experiments rerun after the fixes.</p>
 
     <h3><span class="num">4.1</span>Within a game, only experience written as code produces improvement</h3>
-    <p>When the agent plays a single game for 10 attempts, both forms of text memory are indistinguishable from no memory and close to random play. Both forms of code memory raise task progress to 0.53 and 0.61; at that point 83% to 92% of all steps are decided by programs the agent wrote. Remove the programs and performance returns to where it started.</p>
+    <p>When the agent plays a single game for 10 attempts, every memory form starts between 0.26 and 0.34 on the first attempt. From there, both forms of code memory rise attempt by attempt, to learning-period means of 0.48 and 0.56, with 83% to 92% of all steps decided by programs the agent wrote. Both forms of text memory and the memoryless agent stay between 0.27 and 0.34, not far above random play at 0.21.</p>
   </div>
   <figure class="narrow">
-    <div class="frame"><img src="figs/en/f1_memory_form.png" alt="Bar chart of task progress after 10 attempts for six memory forms; code memory is clearly above text memory and no memory"></div>
-    <figcaption><b>Figure 3. Within-game learning by memory form.</b> Bars are the mean over six games; dots are individual games. Text memory (yellow) cannot be told apart from no memory (grey); code memory (blue) is clearly higher.</figcaption>
+    <div class="frame"><img src="figs/en/f1_memory_form.png" alt="Learning curves of five memory forms over 10 attempts; code memory rises, text memory and no memory stay flat"></div>
+    <figcaption><b>Figure 3. Within-game learning curves.</b> Each point is the task progress of the version actually used in that attempt, averaged over six games. Code memory (blue) improves with play; text memory (yellow) and no memory (grey) stay flat.</figcaption>
   </figure>
   <div class="col">
-    <p>The reason is straightforward. Knowledge in a timing game is "how far is the obstacle, how fast is it moving, when should I press". It is only useful as a program that runs on every frame; written as a note, the model still needs a second per step to read the screen, and the moment has passed. The one exception confirms this. In Wolf3D, a compact text note reaches 0.83, because the game is about finding enemies, finding doors and exploring. These are decisions rather than reflexes, and text can carry them.</p>
+    <p>The reason is straightforward. Knowledge in a timing game is "how far is the obstacle, how fast is it moving, when should I press". It is only useful as a program that runs on every frame; written as a note, the model still needs about a second per step to read the screen, and the moment has passed. Wolf3D is the only game where text notes clearly beat no memory (learning-period mean 0.53 against 0.43). That game is about finding enemies, finding doors and exploring: decisions rather than reflexes.</p>
     <p>Below is the core of the skill the agent wrote for Chrome Dino. Over the next five attempts of 400 steps it did not call the model once, and each attempt cost about two cents:</p>
 <pre><span class="cm"># Chrome Dino skill written by the agent (excerpt; 131 lines in total)</span>
 gray = _gray(frame)
@@ -285,7 +288,7 @@ if dist &lt;= thr:
     <p class="code-note">The code holds two kinds of knowledge at once: a threshold tied to how the screen looks (red: "pixels darker than 118 are objects") and a rule of the game that does not depend on the screen (blue: "jump earlier the faster things move"). Sections 4.4 and 4.5 show that this entanglement determines how far experience can travel.</p>
 
     <h3><span class="num">4.2</span>Given no memory structure, the agent builds what within-game learning needs</h3>
-    <p>We ran 14 agents whose only convention was the entry program <code>play.py</code>, with no structure for notes, a library or a scoreboard. All 14 created notes; 13 rewrote their own program so that it writes a run log during play for the next reflection to read; 8 kept a score ledger. Self-written run logs were not part of the fixed layout we designed. These agents performed no worse than the fixed layout (0.61 against 0.53).</p>
+    <p>We ran 14 agents whose only convention was the entry program <code>play.py</code>, with no structure for notes, a library or a scoreboard. All 14 created notes; 13 rewrote their own program so that it writes a run log during play for the next reflection to read; 8 kept a score ledger. Self-written run logs were not part of the fixed layout we designed. These agents performed no worse than the fixed layout (learning-period mean 0.56 against 0.48).</p>
   </div>
   <figure>
     <div class="frame"><img src="figs/en/f3_memory_content.png" alt="Left: counts of three kinds of bullets in cross-game notes; right: how many of 14 self-organising agents built each structure"></div>
@@ -295,14 +298,14 @@ if dist &lt;= thr:
     <p>What did not appear matters as much. No agent built a library of rules reusable across games, a map, or a list of hypotheses to test. Within a single game the model already closes the engineering loop of recording, evaluating and rolling back on its own. A carrier of knowledge across games would need a different pressure or a different capability.</p>
 
     <h3><span class="num">4.3</span>The cross-game benefit is constant, and similar games give no extra benefit</h3>
-    <p>We had agents play six games in a row and paired each game with an agent that started that game from scratch. We measure transfer with the learning-efficiency ratio TS(N): on the N-th game, the experienced agent's mean task progress over 10 attempts divided by that of the fresh agent. If the agent learns faster over time, TS(N) should rise with N.</p>
+    <p>We had agents play six games in a row and paired each game with an agent that started that game from scratch. We measure transfer with the learning-efficiency ratio TS(N): on the N-th game, the experienced agent's learning-period mean task progress divided by that of the fresh agent. If the agent learns faster over time, TS(N) should rise with N.</p>
   </div>
   <figure>
     <div class="frame"><img src="figs/en/f2_transfer.png" alt="Left: TS(N) against N, with the median fluctuating around 1; right: change relative to a fresh agent after similar or different games"></div>
-    <figcaption><b>Figure 5. Transfer across games.</b> (a) When the agent may use its experience to write a skill before its first attempt at a new game, the median TS for N ≥ 2 is 1.27 (90% bootstrap interval [1.05, 1.49]), but the slope over N is +0.007 (interval [−0.05, +0.07]). (b) Same game, same seed, different history: having played only similar games beforehand is no better than starting fresh, under both agent designs. Dots are individual games.</figcaption>
+    <figcaption><b>Figure 5. Transfer across games.</b> (a) When the agent may use its experience to write a skill before its first attempt at a new game, the median TS for N ≥ 2 is 1.27 (90% bootstrap interval [1.05, 1.49]), but the slope over N is +0.007 (interval [−0.05, +0.07]). (b) Same game, same seed, different history, compared on learning-period mean progress. Dots are individual games.</figcaption>
   </figure>
   <div class="col">
-    <p>Experience helps a little, but the advantage is the same on the second game as on the sixth; it does not accumulate. More surprisingly, experience from similar games gives no extra benefit. With the fixed layout, an agent that had played only similar games scored 0.12 below a fresh agent, and its first attempt was worse too (0.33 against 0.42). We tried three mechanism changes that do not prescribe content: running an "inherited" and a "from scratch" skill side by side in the first attempt of each new game and showing the agent both scores; capping total memory so the agent must choose what to keep; and removing all structure. None changed this result.</p>
+    <p>Experience helps a little, but the advantage is the same on the second game as on the sixth; it does not accumulate. Experience from similar games gives no extra benefit: agents that had played only similar games scored 0.08 below a fresh agent on the learning-period mean with the fixed layout (2 of 9 games positive) and 0.12 below with the self-organised layout (2 of 5 positive), and their first attempt was lower too (−0.09). We tried three mechanism changes that do not prescribe content: running an "inherited" and a "from scratch" skill side by side in the first attempt of each new game and showing the agent both scores; capping total memory so the agent must choose what to keep; and removing all structure. None changed this result.</p>
 
     <h3><span class="num">4.4</span>Why: what it remembers across games is almost entirely engineering</h3>
     <p>Figure 4(a) gives the direct reason. Of the 66 cross-game bullets, about 40 are debugging and engineering practice, about 21 are image-processing tools, and only 5 are rules of a game. Three bullets from one agent's cross-game notes, in its own words (lightly abridged):</p>
@@ -322,15 +325,14 @@ if dist &lt;= thr:
   </figure>
   <figure>
     <div class="frame"><img src="figs/en/f4_ladder.png" alt="Left: experienced minus fresh across six levels from same game to different game; right: learning curves for the same game and the reskin"></div>
-    <figcaption><b>Figure 7. The reach of experience.</b> (a) Task progress of the experienced agent minus the fresh agent. The four left groups come from the ladder (6 pairs each); the two right groups come from the cross-game experiment in Section 4.3. (b) Learning curves of the code-memory agent on the "same game" and "reskin" rungs, averaged over 6 pairs each.</figcaption>
+    <figcaption><b>Figure 7. The reach of experience.</b> (a) Task progress of the experienced agent minus the fresh agent, on the first attempt and as a learning-period mean. The four left groups come from the ladder (6 to 12 pairs each); the two right groups come from the cross-game experiment in Section 4.3. (b) Learning curves of the code-memory agent on the "same game" and "reskin" rungs, averaged over 6 pairs each.</figcaption>
   </figure>
   <div class="col">
-    <p>The ladder draws a clear line. On the three rungs where the screen is unchanged, experience raises the first attempt by 0.01 to 0.13 and the six-attempt average by 0.10 to 0.17. After six attempts, though, the fresh agent catches up, and on hidden seeds the experienced agent no longer leads. Experience buys a faster start, not a higher ceiling. The scoreboards reveal a side effect: experienced agents switched back to their "proven champion" version in 81 of 108 attempts, fresh agents in 18. Experience made the agent explore less.</p>
-    <p>Once the screen changes, experience turns from an asset into a liability. After the reskin the experienced agent's first attempt scored 0.18 against the fresh agent's 0.45, and 5 of 6 pairs were negative. Its own revision notes tell the story. First it switched back to "champion v2"; then it wrote that "v2's fixed dark-mask (gray&lt;118) selects the black background on the now-dark-mode page, so no jumps are ever emitted"; only on the third attempt did it produce a mask that works in both light and dark renderings. The perception code it stored, and its record of which version was the champion, both broke at once.</p>
+    <p>The ladder draws a clear line. On the three rungs where the screen is unchanged, experience raises the first attempt by 0.01 to 0.13 and the learning-period mean by 0.13 to 0.17. Once the screen changes, experience turns from an asset into a liability. After the reskin the experienced agent's first attempt scored 0.18 against the fresh agent's 0.45, with 5 of 6 pairs negative; the learning-period mean was 0.11 lower, also 5 of 6 pairs negative. Its own revision notes tell the story. First it switched back to "champion v2"; then it wrote that "v2's fixed dark-mask (gray&lt;118) selects the black background on the now-dark-mode page, so no jumps are ever emitted"; only on the third attempt did it produce a mask that works in both light and dark renderings. The perception code it stored, and its record of which version was the champion, both broke at once. The scoreboards reveal a side effect: experienced agents switched back to their "proven champion" version in 81 of 108 attempts, fresh agents in 18. Experience made the agent explore less.</p>
     <p>The one kind of experience that survived change was about decisions. When enemies in Wolf3D had three times the health, the experienced agent's first attempt was still 0.42 higher, because it had stored the map, the doors and a route for clearing enemies, all of which remained valid. One more observation: when Chrome Dino was changed so that points accrue only while ducking, none of 12 agents, over 72 attempts, systematically tried ducking. The agent does not explore to discover that the rules have changed.</p>
     <p>Placing the ladder and Section 4.3 on one chart (Figure 7a), the value of experience falls as the change grows and drops below zero at the step where the screen changes. A different game of the same genre also looks different, which explains why similar-game experience did not help in Section 4.3.</p>
 
-    <h3><span class="num">4.6</span>Learning a chain of games: no speed-up, and forgetting</h3>
+    <h3><span class="num">4.6</span>Measured again under cleaner conditions: still no transfer</h3>
     <p>Each of the previous results measures one aspect. To look at lifelong learning as a whole, we adopt the standard evaluation of continual learning (<a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">Lopez-Paz &amp; Ranzato, 2017</a>). The agent learns a chain of games one after another. After each game, a frozen copy of the agent is tested on every game in the chain, which yields a performance matrix. We add the number of attempts it took to learn each game as its cost.</p>
   </div>
   <div class="col tablewrap">
@@ -345,27 +347,23 @@ if dist &lt;= thr:
     </table>
   </div>
   <div class="col">
-    <p>The table shows what an ideal lifelong learner would look like (illustrative numbers). The diagonal (dark) is the level reached. The upper right (light blue) is games not yet learned getting better because of the games before them, i.e. <strong>forward transfer</strong>. The lower left (light red) is whether learned games later lose ground, i.e. <strong>forgetting</strong>. The cost column should fall. We set 0.8 as the threshold for "learned", allowed at most 8 learning attempts per game, and measured each cell with 2 attempts on hidden seeds. We ran two chains, twice each. Chain A is three one-key timing games followed by a first-person shooter (Dino → Geodash → Stack → Wolf3D). Chain B alternates genres (Snake → Wolf3D → Dino → Stack).</p>
+    <p>The table shows what an ideal lifelong learner would look like (illustrative numbers). The diagonal (dark) is the level reached. The upper right (light blue) is games not yet learned getting better because of the games before them, i.e. <strong>forward transfer</strong>. The lower left (light red) is whether learned games later lose ground, i.e. <strong>forgetting</strong>. The cost column should fall.</p>
+    <p><strong>A chain of strategy games.</strong> We chose five games that do not test reflexes: 2048, Tetris, Minesweeper, Pac-Man and Minecraft. Three of them had targets that were too low (random play reaches the original 2048 target), so we raised them (2048: 4,000 points; Tetris: 1,500 points; Minesweeper: 10 correct flags), bringing random play down to 0.2–0.5. At most 8 learning attempts per game, "learned" meaning two consecutive attempts at 0.8 or above; each cell measured with 3 attempts on hidden seeds; two runs.</p>
   </div>
   <figure>
-    <div class="frame"><img src="figs/en/f5_chain.png" alt="Four performance-matrix heat maps with five rows and four columns"></div>
-    <figcaption><b>Figure 8. Chain performance matrices.</b> Each row is task progress on every game in the chain (hidden seeds) after learning the first few games. The outlined cell is the game just learned. Row labels give the number of attempts needed to learn it ("&gt;8" means the threshold was not reached within 8 attempts).</figcaption>
+    <div class="frame"><img src="figs/en/f5_chain.png" alt="Two performance-matrix heat maps with six rows and five columns"></div>
+    <figcaption><b>Figure 8. Performance matrices of the strategy chain.</b> Each row is task progress on every game in the chain (hidden seeds) after learning the first few games. The outlined cell is the game just learned. Row labels give the number of attempts needed to learn it ("&gt;8" means the threshold was not reached within 8 attempts).</figcaption>
   </figure>
-  <div class="col tablewrap">
-    <table>
-      <thead><tr><th>Measure</th><th>Observed (4 runs)</th><th>Ideal lifelong learner</th></tr></thead>
-      <tbody>
-        <tr><td>Level reached (diagonal, hidden seeds)</td><td class="n">0.70</td><td>close to 1</td></tr>
-        <tr><td>Forward transfer</td><td class="n">−0.06</td><td>positive, growing along the chain</td></tr>
-        <tr><td>Cost to learn, by position 1 → 4 (attempts)</td><td class="n">2.8 → 3.5 → 3.8 → 4.3</td><td>falling</td></tr>
-        <tr><td>Change on learned games by the end of the chain</td><td class="n">−0.10</td><td>about 0</td></tr>
-      </tbody>
-    </table>
-  </div>
   <div class="col">
-    <p>The matrices confirm the earlier findings and reveal something the earlier experiments could not see. Each game is learned to a moderate level: after one attempt reaches 0.8, the hidden-seed average is only 0.70, so reaching the threshold once is not the same as having learned the game. Forward transfer is around zero, and the cost of learning does not fall along the chain (games not learned within 8 attempts count as 9; with four runs, position cannot be separated from game difficulty).</p>
-    <p>The new finding is forgetting, with a concrete mechanism. The Snake skill contained <code>import vision</code>, but the shared library had no such module at the time, so the skill could not start and the model played by reading the screen, scoring 1.00. Later, while learning Chrome Dino, the agent wrote a new module called <code>vision.py</code> for Dino. From then on, the old Snake skill imported successfully and took over the game. It died 12 times per attempt and its score fell to 0.33. The Snake skill had not changed by a single character; code that another game had written into the shared library broke it. This is the mechanism of Section 4.4 seen from the other side of time: what is shared is perception code, and perception code does not generalise across games.</p>
-    <p>A caveat: the same code on the same seeds can vary from 0.56 to 1.00 per attempt, because game timing is not fully deterministic. With only 2 measurements per cell, forward transfer and forgetting smaller than about 0.15 cannot be distinguished from noise. The Snake case above is deterministic; the other numbers should be read as directions.</p>
+    <p>2048 and Tetris were learned (0.84 to 1.0); Minesweeper stayed at 0.3 to 0.4, about the level of random play; Pac-Man was not learned; Minecraft stayed at 0 throughout. What gets learned is still what can be written as a fixed-rule program; games that need step-by-step deduction, route planning or 3D exploration were not learned. Forward transfer was −0.09 and +0.09 in the two runs. Learned games showed no deterministic loss by the end of the chain: the same program version on the same seeds already varies from 0.38 to 1.0 per attempt, and the observed changes are within that range.</p>
+    <p><strong>Pokémon across generations.</strong> The browser games share little and first require reading the screen. To measure again under conditions as favourable to transfer as we could find, we moved to Pokémon battles on the open-source simulator Pokémon Showdown. Generations differ in their Pokémon and mechanics but share a strategy (type matchups, when to switch, reading the opponent); the state is given as text, so there is no perception burden; and a battle takes seconds to a minute at about $0.003, so win rates can be measured over hundreds of battles. The agent reads the state and its notes and picks one action per turn; it plays 5 rounds of 10 battles per generation and rewrites that generation's notes after each round. In the lifelong arm the notes are carried forward, and after each generation the notes of all generations are laid side by side and consolidated into global notes. The opponent is the strongest built-in heuristic bot; each condition is measured with 100 battles before and after learning; two runs per arm.</p>
+  </div>
+  <figure class="narrow">
+    <div class="frame"><img src="figs/en/f6_pokemon.png" alt="Win rates before and after learning for both arms on three Pokémon generations"></div>
+    <figcaption><b>Figure 9. Pokémon across generations.</b> Each bar is the mean of two runs of 100 battles; error bars are standard errors.</figcaption>
+  </figure>
+  <div class="col">
+    <p>No learning happened even within a generation: the fresh arm went from a 0.44 win rate before learning to 0.49 after, the lifelong arm from 0.43 to 0.41, both near the noise level. Before learning a new generation, the lifelong arm had no advantage over the fresh arm either (Gen 4: 0.48 against 0.46; Gen 9: 0.38 against 0.42). The notes were correct, but they restated what the model already knows, such as "compare both sides' HP, speed and typing to see who can knock out whom; if at a disadvantage, switch to a teammate that resists". Writing this down adds no information, so it does not change decisions. The lifelong arm wrote as much in its own global notes: practice "worsened gen1/gen4 and did not improve gen9", so old patterns should be treated as weak hypotheses.</p>
   </div>
 </section>
 
@@ -377,72 +375,87 @@ if dist &lt;= thr:
       <tbody>
         <tr><td>Improve within a game from feedback</td><td><span class="yes">Yes</span>, if experience is written as code</td><td>4.1</td></tr>
         <tr><td>Organise its own memory</td><td><span class="yes">Yes</span>, within a single game's engineering loop</td><td>4.2</td></tr>
-        <tr><td>Learn a game to a stable high level</td><td>Partly: about 0.70, and unstable</td><td>4.6</td></tr>
-        <tr><td>Carry experience to the next game</td><td>A constant benefit that does not accumulate</td><td>4.3</td></tr>
-        <tr><td>Store game rules independent of the screen</td><td><span class="no">No</span>; rules stay in notes</td><td>4.4</td></tr>
+        <tr><td>Learn a game to a high level</td><td>Partly: games that can be written as fixed rules (2048, Tetris), not those needing deduction, planning or 3D exploration</td><td>4.6</td></tr>
+        <tr><td>Carry experience to the next game</td><td>A constant benefit that does not accumulate; zero under cleaner conditions (Pokémon)</td><td>4.3, 4.6</td></tr>
+        <tr><td>Store game rules independent of the screen</td><td><span class="no">No</span>; rules stay in notes, or are common knowledge</td><td>4.4, 4.6</td></tr>
         <tr><td>Keep experience valid when the environment changes</td><td>Only if the screen is unchanged; decision knowledge is the exception</td><td>4.5</td></tr>
         <tr><td>Explore to discover changed rules</td><td><span class="no">No</span></td><td>4.5</td></tr>
         <tr><td>Learn faster over time</td><td><span class="no">No</span></td><td>4.3, 4.6</td></tr>
-        <tr><td>Learn new games without forgetting old ones</td><td><span class="no">No</span>; shared code causes forgetting</td><td>4.6</td></tr>
+        <tr><td>Learn new games without forgetting old ones</td><td>After fixing the harness, no forgetting beyond measurement noise</td><td>4.6</td></tr>
       </tbody>
     </table>
   </div>
-  <p>Of the three capabilities, the first two are within reach; the third breaks at a specific point. The agent's experience exists as perception code plus score records, and both are expressed in pixel coordinates. This accounts for every negative result. Transfer between similar games is negative because inherited perception code must first be repaired. The benefit stops growing because engineering lessons saturate after one or two games. Reskinning breaks everything. And rewriting shared perception code for a new game breaks the old ones.</p>
-  <p class="takeaway">The distance to a lifelong game agent is not that it cannot learn. It is that what it learns only holds in the pixels it has seen.</p>
-  <p>The shape of the gap is therefore clear. What is missing is a <strong>representation independent of appearance</strong> (objects, relative positions, speeds, and rules stated over them) together with a tendency to abstract at that level. The line <code>thr = 2.2 * spd</code> in the Dino skill and the note "steps in the danger zone equal width divided by speed" show that the model can write such rules. The Wolf3D exception shows that once such knowledge exists in a form that does not depend on appearance, it survives a rule change. The problem is that the agent never separates rules from perception code to store and reuse them on their own.</p>
-  <p><strong>Relation to prior work.</strong> On twelve Unreal Engine games, <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">OmniGameArena</a> finds that a skill's gain on the original task does not predict its transfer to held-out variants; in one game the model with the largest original gain (+201%) transferred negatively to all three variants, consistent with our reskin result. On text games with unfamiliar rules, <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">Learn2Play Bench</a> finds that keeping complete records of actions and feedback works better than summarising experience into rules, and that human players try more varied strategies and repeat actions less than agents, which echoes the "stick with the champion, do not explore" behaviour we observe. In text environments, the memory mechanisms with evidence of cross-environment transfer are contrastive distillation of sub-task lessons from successful and failed trajectories (<a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">ExpeL</a>, <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">ReasoningBank</a>) and memory consolidators trained on downstream task reward (<a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">Auto-Dreamer</a>). Prompt-driven offline "sleep" consolidation has no evidence of task transfer so far. Work in which agents rewrite their own learning procedure, such as <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">Hyperagents</a>, shows that a learned learning procedure can speed up the start on a new domain, though the evidence remains limited. To our knowledge, no prior work has measured skill transfer between different games from pixels against a from-scratch control.</p>
-  <p><strong>Next steps.</strong> The chain performance matrix can serve as a single yardstick for comparing agent designs: the diagonal measures learning, the upper right generalisation, the lower left forgetting, and the cost column whether learning speeds up. Once the yardstick is more precise (more measurements per cell, versioning of the shared library, and "learned" defined as two consecutive attempts above threshold), three content-neutral mechanisms can be tested in turn: regression-testing learned games before any change to shared code (aimed at forgetting); periodically laying out all games' skills and curves side by side and asking the agent for what they have in common (aimed at transfer); and finally letting the agent improve its own learning procedure with the matrix as the objective. Two further variables need testing: whether a stronger base model separates rules from perception on its own, and whether a stream of games with deeper shared structure and recurring variants rewards abstraction enough to make it worthwhile.</p>
+  <p>Of the three capabilities, the first two are within reach; the third breaks at a specific point: <strong>what the agent stores is either too specific or too generic, and the layer in between is missing.</strong> Too specific is perception code tied to pixels ("pixels darker than 118 are objects"), which breaks when the screen changes. Too generic is knowledge the model already has (the Pokémon notes), which adds no information. The engineering lessons that do travel ("change one thing at a time") are complete after one or two games. The missing middle layer is <strong>game rules and mechanics</strong>: "touching spikes kills you", "jump earlier the faster things move", "water beats fire". This layer is non-trivial and reusable across games, yet it was almost never stored on its own. A second reason is a noisy learning signal: the agent only sees the final score of each attempt, while the same code already varies from 0.38 to 1.0 per attempt, so it can hardly tell whether a change helped.</p>
+  <p class="takeaway">The distance to a lifelong game agent is not that it cannot learn. It is that what it learns either holds only in the pixels it has seen, or is something it already knew.</p>
+  <p><strong>Relation to prior work.</strong> Humans rely on priors too: when a game's object semantics and visual consistency are removed, human completion time rises from about 2 minutes to over 20 (<a href="https://arxiv.org/abs/1802.10217" target="_blank" rel="noopener">Dubey et al., 2018</a>), the same phenomenon as our reskin result. On twelve Unreal Engine games, <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">OmniGameArena</a> finds that a skill's gain on the original task does not predict its transfer to held-out variants; in one game the model with the largest original gain (+201%) transferred negatively to all three variants. On text games with unfamiliar rules, <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">Learn2Play Bench</a> finds that keeping complete records of actions and feedback works better than summarising experience into rules, and that human players try more varied strategies and repeat actions less than agents, which echoes the "stick with the champion, do not explore" behaviour we observe. In text environments, the memory mechanisms with evidence of cross-environment transfer are contrastive distillation of sub-task lessons from successful and failed trajectories (<a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">ExpeL</a>, <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">ReasoningBank</a>) and memory consolidators trained on downstream task reward (<a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">Auto-Dreamer</a>).</p>
+  <p><strong>Next: make rules the unit that accumulates.</strong> Humans learn games quickly mainly by building a model of the rules (what kills you, how things move) and reasoning with it, rather than recording what to press. Prior work shows this route is viable: a theory-based agent that learns each game's rules as a small program, designs probes to test its guesses and plans with the rules approaches human learning efficiency in simple grid games (<a href="https://arxiv.org/abs/2107.12544" target="_blank" rel="noopener">Tsividis et al., 2021</a>); <a href="https://arxiv.org/abs/2402.12275" target="_blank" rel="noopener">WorldCoder</a> has a language model write the environment's rules as an executable world model, which is far more sample-efficient than learning a policy and transfers across environments by editing code; and on <a href="https://arxiv.org/abs/2603.24621" target="_blank" rel="noopener">ARC-AGI-3</a>, a benchmark of how fast an agent learns games with novel rules, executable world models have also made progress (<a href="https://arxiv.org/abs/2605.05138" target="_blank" rel="noopener">2026</a>). We therefore propose a falsifiable hypothesis: <strong>if the agent predicts the next state at every step, writes the rules as a runnable model, designs probes to test its guesses, plans with the model, and stores verified mechanics in a cross-game library, then later games will require fewer new rules to be learned, and the cost of learning will fall.</strong> This addresses both problems at once: prediction error is right or wrong at every step, far denser than the final score, and rules are the missing middle layer. If later games still do not get cheaper, the problem lies deeper, for example in the model's inductive ability, or experience needs to be trained into the weights. We design only these learning mechanisms and never tell the agent any specific rule.</p>
 </section>
 
 <section class="col" id="limits">
   <h2><span class="num">6</span>Limitations</h2>
   <ul class="plain">
-    <li><strong>Small samples.</strong> Most conditions have one or two agents per cell, and two agents under identical conditions can differ by a factor of two. Each conclusion's direction holds across five to nine games or across most pairs; individual values are reliable to roughly ±0.15 to ±0.3.</li>
+    <li><strong>Sample size.</strong> Most browser-game conditions have one or two agents per cell; two agents under identical conditions can differ by a factor of two, and single attempts vary noticeably. Each conclusion's direction holds across five to nine games or across most pairs; individual values are reliable to roughly ±0.15. Pokémon cells use 2 × 100 battles, with a standard error of about 0.035.</li>
     <li><strong>One model.</strong> Whether a stronger model would abstract game rules on its own is the most direct untested variable.</li>
-    <li><strong>Short lives.</strong> Six to ten attempts per game and at most six games in a row; several tasks hit the ceiling of 1.0, which compresses differences.</li>
-    <li><strong>Scope of games.</strong> Pausable 2D and simple 3D browser games only. Real-time, multiplayer and long-horizon strategy games are out of scope.</li>
-    <li><strong>Uninformative or thin evidence in places.</strong> The "points only while ducking" rung on Chrome Dino scored 0 on both sides; the robustness of decision knowledge was observed in Wolf3D only; the chain experiment has two chains with two runs each, and position is confounded with game difficulty.</li>
+    <li><strong>Short lives.</strong> Six to ten attempts per game and at most six games in a row. This is enough for adaptation, not for mastery.</li>
+    <li><strong>Pokémon tested text notes only.</strong> A code carrier (for example, a damage calculator with look-ahead search) has not been tested on Pokémon.</li>
+    <li><strong>Notes of fixed-layout agents are truncated.</strong> About 70% of per-game notes and 38% of cross-game notes exceeded their length limit at the last write and lost their endings, which often held open questions and next steps. "No hypothesis lists" therefore holds only for the self-organised agents, whose files are not truncated. The Pokémon experiment no longer truncates silently.</li>
+    <li><strong>Scope of games.</strong> Pausable browser games and turn-based battles only. Real-time, multiplayer and long-horizon commercial games are out of scope.</li>
   </ul>
 </section>
 
 <section class="col" id="appendix">
   <h2><span class="num">A</span>Appendix</h2>
-  <h3>Scale and cost</h3>
+  <h3>A.1 Scale and cost</h3>
   <div class="tablewrap">
     <table>
       <thead><tr><th>Item</th><th>Value</th></tr></thead>
       <tbody>
-        <tr><td>Attempts / environment steps</td><td class="n">4,743 / about 1.16M</td></tr>
-        <tr><td>Total API cost (at peak prices; an upper bound)</td><td class="n">$313</td></tr>
-        <tr><td>One attempt, model decides every step</td><td class="n">$0.05–0.25, 8–15 min</td></tr>
-        <tr><td>One attempt, skill program in control</td><td class="n">$0.01–0.03, 2–3 min</td></tr>
-        <tr><td>Similarity ladder (87 agents)</td><td class="n">$67</td></tr>
-        <tr><td>Chain experiment (4 runs)</td><td class="n">$17</td></tr>
+        <tr><td>Browser games: attempts</td><td class="n">about 5,000; about 1.2M environment steps</td></tr>
+        <tr><td>Pokémon: battles</td><td class="n">3,400</td></tr>
+        <tr><td>Total API cost (at peak prices; an upper bound)</td><td class="n">about $345</td></tr>
+        <tr><td>One browser-game attempt, model decides every step</td><td class="n">$0.05–0.25, 8–15 min</td></tr>
+        <tr><td>One browser-game attempt, skill program in control</td><td class="n">$0.01–0.03, 2–3 min</td></tr>
+        <tr><td>One Pokémon battle</td><td class="n">about $0.003</td></tr>
       </tbody>
     </table>
   </div>
-  <h3>Implementation details</h3>
+  <h3>A.2 Implementation details</h3>
   <ul class="plain">
-    <li>Per-step decisions run with the model's reasoning off (about 1.2 s per step). Reflection after each attempt uses medium reasoning with a 48k-token output budget, retried at lower effort if reasoning exhausts the budget and returns an empty reply.</li>
+    <li>Per-step decisions run with the model's reasoning off (about 1.2 s per step). Reflection after each attempt uses medium reasoning, retried at lower effort if reasoning exhausts the output budget and returns an empty reply.</li>
     <li>Skill programs run in a separate process with a 2-second limit per frame; on error or timeout, the model decides that step.</li>
-    <li>Notes are truncated at their limits; the shared library has no limit (a separate experiment capped all memory at 8,000 characters; see Section 4.3).</li>
-    <li>Control-feel changes are applied in the key-execution layer; rule changes are patches that generate separate local copies of the game; reskins transform the screenshot colours and leave game logic untouched.</li>
-    <li>In the chain experiment, learning stops when an attempt reaches the threshold or after the 8th attempt, and no reflection follows that attempt, so the version measured is the version that earned the score.</li>
+    <li>Control-feel changes are applied in the key-execution layer; rule changes are patches that generate local copies of the game; reskins transform the screenshot colours and leave game logic untouched.</li>
+    <li>Chain experiments: learning stops after two consecutive attempts at the threshold or after the 8th attempt, with no reflection after the last attempt; when a game has been learned, the shared library is frozen for that game's skills.</li>
+    <li>Pokémon: one model call per turn; over-long notes are first returned to the model to shorten, and are only cut, with a record, if still too long.</li>
   </ul>
+  <h3>A.3 GameWorld fixes</h3>
+  <p>In 31 of GameWorld's 165 tasks, the scoring rule refers to a field the game never emits, so every policy scores 0. We mapped these fields to the equivalent fields the games do emit, and log the mapping with every run.</p>
+  <h3 id="errata">A.4 Revision notes (2026-10-20)</h3>
+  <p>Later experiments uncovered three flaws in our experimental harness. This version is revised accordingly:</p>
+  <ol class="plain">
+    <li><strong>Withdrawn: "learning new games breaks old ones".</strong> The previous version reported one case of forgetting: a module written into the shared library while learning Chrome Dino dropped the old Snake skill from 1.00 to 0.33. The cause was two games' modules sharing a name, a flaw in our harness rather than a property of the agent. After the fix (freezing a copy of the shared library for each game once it is learned), no forgetting beyond measurement noise appeared.</li>
+    <li><strong>Unaffected readings only.</strong> Earlier experiments let the agent reflect once more after its last learning attempt and then measured a "final score" on hidden seeds, which could measure a new version that had never been played. Figures 3, 5(b) and 7 now use the scores of versions actually played during learning, and first-attempt scores. The direction of every conclusion is unchanged; some values changed: code-memory single-game scores from 0.53 / 0.61 to 0.48 / 0.56; "after similar games" relative to a fresh agent from −0.12 to −0.08; the effect of text notes in Wolf3D from 0.83 to 0.53 (no memory: 0.43).</li>
+    <li><strong>Chain experiment rerun.</strong> The previous chain matrices came from runs before the fixes; this version uses the strategy chain rerun after the fixes (Figure 8) and adds the Pokémon experiment (Figure 9).</li>
+    <li><strong>Scope of "no hypothesis lists".</strong> Fixed-layout agents' notes were truncated, and the cut endings often held hypotheses to test, so this observation holds only for the self-organised agents, whose files are not truncated.</li>
+  </ol>
   <h3>References</h3>
   <ol class="refs">
     <li>Ouyang et al. GameWorld: Towards Standardized and Verifiable Evaluation of Multimodal Game Agents. <a href="https://arxiv.org/abs/2604.07429" target="_blank" rel="noopener">arXiv:2604.07429</a></li>
     <li>Wang et al. Voyager: An Open-Ended Embodied Agent with Large Language Models. <a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">arXiv:2305.16291</a></li>
     <li>Tan et al. Cradle: Empowering Foundation Agents Towards General Computer Control. <a href="https://arxiv.org/abs/2403.03186" target="_blank" rel="noopener">arXiv:2403.03186</a></li>
     <li>Lopez-Paz &amp; Ranzato. Gradient Episodic Memory for Continual Learning. <a href="https://arxiv.org/abs/1706.08840" target="_blank" rel="noopener">arXiv:1706.08840</a></li>
+    <li>Dubey et al. Investigating Human Priors for Playing Video Games. ICML 2018. <a href="https://arxiv.org/abs/1802.10217" target="_blank" rel="noopener">arXiv:1802.10217</a></li>
+    <li>Tsividis et al. Human-Level Reinforcement Learning through Theory-Based Modeling, Exploration, and Planning. <a href="https://arxiv.org/abs/2107.12544" target="_blank" rel="noopener">arXiv:2107.12544</a></li>
+    <li>Tang, Key &amp; Ellis. WorldCoder, a Model-Based LLM Agent: Building World Models by Writing Code and Interacting with the Environment. NeurIPS 2024. <a href="https://arxiv.org/abs/2402.12275" target="_blank" rel="noopener">arXiv:2402.12275</a></li>
+    <li>ARC Prize Foundation. ARC-AGI-3. <a href="https://arxiv.org/abs/2603.24621" target="_blank" rel="noopener">arXiv:2603.24621</a></li>
+    <li>Executable World Models for ARC-AGI-3 in the Era of Coding Agents. <a href="https://arxiv.org/abs/2605.05138" target="_blank" rel="noopener">arXiv:2605.05138</a></li>
     <li>Zhao et al. ExpeL: LLM Agents Are Experiential Learners. <a href="https://arxiv.org/abs/2308.10144" target="_blank" rel="noopener">arXiv:2308.10144</a></li>
     <li>Ouyang et al. ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory. <a href="https://arxiv.org/abs/2509.25140" target="_blank" rel="noopener">arXiv:2509.25140</a></li>
     <li>Ye et al. Auto-Dreamer: Learning Offline Memory Consolidation for Language Agents. <a href="https://arxiv.org/abs/2605.20616" target="_blank" rel="noopener">arXiv:2605.20616</a></li>
-    <li>Zhang et al. Hyperagents. <a href="https://arxiv.org/abs/2603.19461" target="_blank" rel="noopener">arXiv:2603.19461</a></li>
     <li>Lin et al. OmniGameArena: A Unified UE5 Benchmark for VLM Game Agents with Improvement Dynamics. <a href="https://arxiv.org/abs/2606.09826" target="_blank" rel="noopener">arXiv:2606.09826</a></li>
     <li>Li et al. Learn2Play Bench: How Well Do LLM Agents Learn from Experience in Unfamiliar Environments? <a href="https://arxiv.org/abs/2610.08215" target="_blank" rel="noopener">arXiv:2610.08215</a></li>
+    <li>Pokémon Showdown (open-source battle simulator), <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">github.com/smogon/pokemon-showdown</a>; poke-env, <a href="https://github.com/hsahovic/poke-env" target="_blank" rel="noopener">github.com/hsahovic/poke-env</a></li>
   </ol>
-  <p class="foot">Game screenshots come from third-party web games included in GameWorld; all rights belong to their owners, and they are shown here for research illustration only. The game copies used for rule changes are generated locally by patch scripts and are not distributed with the code.</p>
+  <p class="foot">Game screenshots come from third-party web games included in GameWorld; all rights belong to their owners, and they are shown here for research illustration only. The game copies used for rule changes are generated locally by patch scripts and are not distributed with the code. Pokémon is a trademark of Nintendo, Creatures and Game Freak; this work uses only the open-source battle simulator, for research.</p>
 </section>
 </main>
 </body>
